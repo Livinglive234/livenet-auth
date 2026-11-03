@@ -47,7 +47,7 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         'logout_to_authentik' => ['LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', 'livenet-auth.logout_to_authentik', 'bool'],
         'backchannel_logout' => ['LIVENET_AUTH_BACKCHANNEL_LOGOUT', 'livenet-auth.backchannel_logout', 'bool'],
         'back_to_site' => ['LIVENET_AUTH_BACK_TO_SITE', 'livenet-auth.back_to_site', 'bool'],
-        'back_to_site_url' => ['LIVENET_AUTH_BACK_TO_SITE_URL', 'livenet-auth.back_to_site_url', 'text'],
+        'back_to_site_url' => ['LIVENET_AUTH_BACK_TO_SITE_URL', 'livenet-auth.back_to_site_url', 'string'],
         'logout_url' => ['LIVENET_AUTH_LOGOUT_URL', 'livenet-auth.logout_url', 'string'],
         'logout_end_session_url' => ['LIVENET_AUTH_LOGOUT_END_SESSION_URL', 'livenet-auth.logout_end_session_url', 'string'],
         'logout_return_url' => ['LIVENET_AUTH_LOGOUT_RETURN_URL', 'livenet-auth.logout_return_url', 'string'],
