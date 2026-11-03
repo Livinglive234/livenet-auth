@@ -99,17 +99,14 @@ Do this **last**, after you have checked that signing in with the LiveNet button
 
 ## Releasing and updating
 
-The panel checks `update_url` in `plugin.json`, which points at `update.json` in this repo. That file says the newest version, where to download the zip, and its checksum.
+The panel checks `update_url` in `plugin.json`, which points at `update.json` in this repo. That file says the newest version, where to download the zip, and its checksum. The panel caches it for about 10 minutes.
 
-To publish a new version (from a clone on your own computer):
+To publish a new version, from a clone on your own computer, with your changes already committed and pushed to `main`:
 
 ```bash
-./release.sh 1.0.1
-git add -A && git commit -m "Release v1.0.1"
-git tag v1.0.1 && git push && git push --tags
-gh release create v1.0.1 dist/livenet-auth.zip --title "v1.0.1" --notes "Release v1.0.1"
+./publish.sh 1.4.1
 ```
 
-Upload exactly the zip the script built, or the checksum in `update.json` won't match. Publish the release right after pushing, because `update.json` points at it.
+It checks you're on `main` with nothing uncommitted and in sync with GitHub, asks before publishing, then bumps the version, builds `livenet-auth.zip`, writes `update.json` with the checksum, tags the commit, pushes, and creates a GitHub release with the zip attached. The panel then shows an update on its Plugins page, and you can update in place.
 
-The panel then shows an update on the Plugins page.
+The first install must come from a version that already has `update_url` in its `plugin.json` (1.4.0 and later). `./release.sh <version>` does just the build step, if you want to make a zip without publishing.
