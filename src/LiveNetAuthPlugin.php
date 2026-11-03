@@ -137,7 +137,7 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
                 ->schema([
                     Toggle::make('show_mfa_notice')
                         ->label('Point 2FA to the LiveNet account')
-                        ->helperText('Shows a notice on every profile page, and sends the old 2FA tab\'s address to the page below.'),
+                        ->helperText('Shows one "Two-factor authentication" button on every profile page, and sends the old 2FA tab\'s address to the page below.'),
                     TextInput::make('mfa_page_url')
                         ->label('LiveNet account 2FA page')
                         ->helperText('The website page where people set up an authenticator app and backup codes.')

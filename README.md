@@ -10,7 +10,7 @@ What it does:
 4. **Keeps usernames in step.** Each time someone signs in with Authentik, the panel account's username is set to their Authentik username. This fixes the placeholder name an invited person gets (like `kai3x9`) once they create their LiveNet account. Root admins are skipped, and a name that's already taken is left alone (it's written to the panel's log).
 5. **Optionally skips the login page** and goes straight to Authentik.
 6. **Sends "forgot password" to Authentik's recovery flow**, since a panel password can no longer be used to sign in.
-7. **Hides the passkey buttons** so nobody sets one up (optionally blocks passkey sign-in completely), and **removes the panel's own 2FA** and points 2FA at the website's page (a notice on the profile page, plus a redirect from the old 2FA tab's address). It forces `APP_2FA_REQUIRED` to 0 so nobody is locked out.
+7. **Hides the passkey buttons** so nobody sets one up (optionally blocks passkey sign-in completely), and **removes the panel's own 2FA** and points 2FA at the website's page (one button on the profile page, plus a redirect from the old 2FA tab's address). It forces `APP_2FA_REQUIRED` to 0 so nobody is locked out.
 8. **Replaces the panel's password reset email** (including the admin Users page's "Reset password" button) with one that links to Authentik's recovery flow.
 9. **Signs you out of Authentik too** when you sign out of the panel, and returns you to the panel's login page (which then sends you to Authentik). On sign-in it keeps your Authentik login token in the panel's server-side session so it can do this. (An earlier version used a cookie, which was too large and broke sign-in with a 502.)
 
@@ -29,7 +29,7 @@ What it does:
 | Hide passkey buttons | **untested** |
 | Block passkey routes (off by default) | **untested** |
 | Remove panel 2FA | **untested** |
-| Profile notice and 2FA redirect to the website | **untested** |
+| Profile 2FA button and redirect to the website | **untested** |
 | Username sync | **untested**. It relies on Socialite remembering the user fetched earlier in the same request. |
 
 It was written without PHP available, so run the lint step below before enabling it. Install it by importing the zip in Admin → Plugins; copying the folder by hand did not work reliably.
@@ -71,7 +71,7 @@ Status: **untested** (written without PHP available).
 | `LIVENET_AUTH_HIDE_PASSKEYS` | `true` | Hide the passkey buttons (login page and profile tab). Cosmetic only. |
 | `LIVENET_AUTH_BLOCK_PASSKEYS` | `false` | Also block the passkey routes completely. |
 | `LIVENET_AUTH_DISABLE_PANEL_2FA` | `true` | Remove the panel's own 2FA and force "require 2FA" off. |
-| `LIVENET_AUTH_SHOW_MFA_NOTICE` | `true` | Profile notice, and redirect from the old 2FA tab's address, to the website's 2FA page. |
+| `LIVENET_AUTH_SHOW_MFA_NOTICE` | `true` | One 'Two-factor authentication' button on the profile page, and a redirect from the old 2FA tab's address, to the website's 2FA page. |
 | `LIVENET_AUTH_MFA_PAGE_URL` | `https://livenet.host/account/2fa` | The website page for setting up 2FA. |
 | `LIVENET_AUTH_RESET_EMAIL_TO_AUTHENTIK` | `true` | Replace Pelican's reset email with one linking to Authentik's recovery flow. |
 | `LIVENET_AUTH_LOGOUT_TO_AUTHENTIK` | `true` | Panel sign-out also ends the Authentik login. |
