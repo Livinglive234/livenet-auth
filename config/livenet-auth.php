@@ -37,6 +37,14 @@ return [
     // and copy the address if this guess is wrong.
     'recovery_url' => env('LIVENET_AUTH_RECOVERY_URL', 'https://auth.livenet.host/if/flow/default-recovery-flow/'),
 
+    // Block passkey sign-in on the panel. A passkey would skip Authentik entirely.
+    'disable_passkeys' => (bool) env('LIVENET_AUTH_DISABLE_PASSKEYS', true),
+
+    // Remove the panel's own two-factor options (authenticator app and email codes), since
+    // Authentik handles sign-in now. This also forces APP_2FA_REQUIRED to 0, because requiring
+    // 2FA with no way to set it up would lock people out.
+    'disable_panel_2fa' => (bool) env('LIVENET_AUTH_DISABLE_PANEL_2FA', true),
+
     // Replace Pelican's own password reset email (including the admin Users page's
     // "Reset password" button) with one that links to Authentik's recovery flow.
     'reset_email_to_authentik' => (bool) env('LIVENET_AUTH_RESET_EMAIL_TO_AUTHENTIK', true),

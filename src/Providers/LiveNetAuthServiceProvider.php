@@ -14,6 +14,7 @@ use Illuminate\Support\HtmlString;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use LiveNet\LiveNetAuth\Http\Middleware\BlockPasskeys;
 use LiveNet\LiveNetAuth\Http\Responses\LogoutToAuthentik;
 use LiveNet\LiveNetAuth\Notifications\AuthentikPasswordReset;
 use LiveNet\LiveNetAuth\Notifications\InvitedToServer;
@@ -59,6 +60,16 @@ class LiveNetAuthServiceProvider extends ServiceProvider
 
         if (config('livenet-auth.redirect_password_reset')) {
             $this->redirectPasswordReset();
+        }
+
+        if (config('livenet-auth.disable_passkeys')) {
+            $this->disablePasskeys();
+        }
+
+        if (config('livenet-auth.disable_panel_2fa')) {
+            // The panel's "require 2FA" setting would send people to a settings tab that no
+            // longer exists, so make sure it is off (the plugin removes the tab).
+            config(['panel.auth.2fa_required' => 0]);
         }
 
         if (config('livenet-auth.reset_email_to_authentik')) {
@@ -335,6 +346,19 @@ class LiveNetAuthServiceProvider extends ServiceProvider
 
             return false;
         });
+    }
+
+    /** Block the passkey routes, and hide the buttons that would use them. */
+    private function disablePasskeys(): void
+    {
+        $this->app['router']->pushMiddlewareToGroup('web', BlockPasskeys::class);
+
+        // Cosmetic only: the middleware above is what actually stops passkeys. If a Pelican
+        // update renames these, a dead button may show, but it will not work.
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::HEAD_END,
+            fn (): HtmlString => new HtmlString('<style>[x-on\\:click*="authenticateWithPasskey"],[x-on\\:click*="passkeys::data::tab"]{display:none!important}</style>'),
+        );
     }
 
     /** @return array<string, mixed> */

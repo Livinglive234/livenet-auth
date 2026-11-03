@@ -36,6 +36,8 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         'signup_url' => ['LIVENET_AUTH_SIGNUP_URL', 'livenet-auth.signup_url', 'string'],
         'redirect_password_reset' => ['LIVENET_AUTH_REDIRECT_PASSWORD_RESET', 'livenet-auth.redirect_password_reset', 'bool'],
         'recovery_url' => ['LIVENET_AUTH_RECOVERY_URL', 'livenet-auth.recovery_url', 'string'],
+        'disable_passkeys' => ['LIVENET_AUTH_DISABLE_PASSKEYS', 'livenet-auth.disable_passkeys', 'bool'],
+        'disable_panel_2fa' => ['LIVENET_AUTH_DISABLE_PANEL_2FA', 'livenet-auth.disable_panel_2fa', 'bool'],
         'reset_email_to_authentik' => ['LIVENET_AUTH_RESET_EMAIL_TO_AUTHENTIK', 'livenet-auth.reset_email_to_authentik', 'bool'],
         'logout_to_authentik' => ['LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', 'livenet-auth.logout_to_authentik', 'bool'],
         'logout_url' => ['LIVENET_AUTH_LOGOUT_URL', 'livenet-auth.logout_url', 'string'],
@@ -53,7 +55,19 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         return 'livenet-auth';
     }
 
-    public function register(Panel $panel): void {}
+    public function register(Panel $panel): void
+    {
+        // Authentik handles sign-in now, so drop the panel's own two-factor options. They are
+        // only ever asked for after a password sign-in, which is turned off. This also removes
+        // the 2FA tab on the profile page. A failure here must never break the panel.
+        if (config('livenet-auth.disable_panel_2fa', env('LIVENET_AUTH_DISABLE_PANEL_2FA', true))) {
+            try {
+                $panel->multiFactorAuthentication([]);
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        }
+    }
 
     public function boot(Panel $panel): void {}
 
@@ -99,6 +113,17 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
                     Toggle::make('sync_username')
                         ->label('Keep usernames in step')
                         ->helperText('Copies the Authentik username onto the panel account at sign-in. Root admins are skipped. (Not tested yet.)'),
+                ]),
+
+            Section::make('Other ways to sign in')
+                ->description('Authentik handles sign-in and 2FA now. These remove the panel\'s own options so nothing skips Authentik.')
+                ->schema([
+                    Toggle::make('disable_passkeys')
+                        ->label('Block passkey sign-in')
+                        ->helperText('A passkey would skip Authentik entirely.'),
+                    Toggle::make('disable_panel_2fa')
+                        ->label('Remove the panel\'s own 2FA')
+                        ->helperText('Removes the authenticator-app and email-code options and the 2FA tab, and forces "require 2FA" off so nobody gets locked out. Takes effect after the page reloads.'),
                 ]),
 
             Section::make('Invitations')
