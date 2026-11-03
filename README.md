@@ -7,7 +7,8 @@ What it does:
 1. **Keeps the Authentik link in place.** A user can no longer remove their Authentik link from the profile page (the button is hidden, and the save is blocked on the server). Console commands (`artisan`, `tinker`) are never blocked.
 2. **Locks synced accounts.** Anyone linked to Authentik becomes "managed externally" (username, email and password are locked in the panel). Root admins are skipped.
 3. **Bridges subuser invites.** When someone is added as a subuser, they get an email. If they have no LiveNet login yet, it explains how to create one with the same email address, then how to sign in to the panel.
-4. **Optionally skips the login page** and goes straight to Authentik.
+4. **Keeps usernames in step.** Each time someone signs in with Authentik, the panel account's username is set to their Authentik username. This fixes the placeholder name an invited person gets (like `kai3x9`) once they create their LiveNet account. Root admins are skipped, and a name that's already taken is left alone (it's written to the panel's log).
+5. **Optionally skips the login page** and goes straight to Authentik.
 
 Not tested on a running panel yet. There was no PHP available where it was written, so run the lint step below before enabling it.
 
@@ -34,6 +35,7 @@ Not tested on a running panel yet. There was no PHP available where it was writt
 | `LIVENET_AUTH_PROVIDER` | `authentik` | The OAuth provider id in the panel's OAuth settings. |
 | `LIVENET_AUTH_PROTECT_LINK` | `true` | Keep the Authentik link in place. |
 | `LIVENET_AUTH_LOCK_SYNCED_USERS` | `true` | Mark linked non-admins as managed externally. |
+| `LIVENET_AUTH_SYNC_USERNAME` | `true` | Copy the Authentik username onto the panel account at sign-in. |
 | `LIVENET_AUTH_INVITE_EMAILS` | `true` | Send the invite email described above. |
 | `LIVENET_AUTH_SIGNUP_URL` | `https://auth.livenet.host/if/flow/default-enrollment-flow/` | Where "Create your LiveNet account" goes. `?email=` is added. |
 | `LIVENET_AUTH_SKIP_LOGIN` | `false` | Go straight to Authentik from the login page. Add `?stay` to the URL to see the page. |

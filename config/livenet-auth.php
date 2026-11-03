@@ -16,6 +16,11 @@ return [
     // email and password in the panel). Root admins are skipped so they can still fix things.
     'lock_synced_users' => (bool) env('LIVENET_AUTH_LOCK_SYNCED_USERS', true),
 
+    // Copy the Authentik username onto the panel account every time someone signs in with
+    // Authentik. This fixes the placeholder name an invited person gets (like "kai3x9")
+    // once they create their LiveNet account. Root admins are skipped.
+    'sync_username' => (bool) env('LIVENET_AUTH_SYNC_USERNAME', true),
+
     // Email people who are added as a subuser, with a link to create a LiveNet account
     // if they don't have one yet. Also set PANEL_SEND_ADDED_TO_SERVER_NOTIFICATION=false
     // so they don't get Pelican's own email as well.

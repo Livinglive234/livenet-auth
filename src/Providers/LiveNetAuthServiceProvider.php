@@ -6,9 +6,11 @@ use App\Events\Server\SubUserAdded;
 use App\Models\User;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Socialite\Facades\Socialite;
 use LiveNet\LiveNetAuth\Notifications\InvitedToServer;
 use Throwable;
 
@@ -33,6 +35,10 @@ class LiveNetAuthServiceProvider extends ServiceProvider
 
         if (config('livenet-auth.lock_synced_users')) {
             $this->lockSyncedUsers($provider);
+        }
+
+        if (config('livenet-auth.sync_username')) {
+            $this->syncUsername($provider);
         }
 
         if (config('livenet-auth.invite_emails')) {
@@ -90,6 +96,48 @@ class LiveNetAuthServiceProvider extends ServiceProvider
             }
 
             $user->forceFill(['is_managed_externally' => true])->saveQuietly();
+        });
+    }
+
+    /**
+     * Copy the Authentik username onto the panel account when someone signs in with
+     * Authentik. Pelican only uses it when it creates a brand-new account, so a person
+     * who was first created by a subuser invite would keep the placeholder name.
+     *
+     * Socialite remembers the person it fetched earlier in this same request, so asking
+     * for the user again here does not call Authentik a second time.
+     */
+    private function syncUsername(string $provider): void
+    {
+        Event::listen(Login::class, function (Login $event) use ($provider): void {
+            try {
+                $request = request();
+                if (!$request->routeIs('auth.oauth.callback') || $request->route('driver') !== $provider) {
+                    return;
+                }
+
+                $user = $event->user;
+                if (!$user instanceof User || $user->isRootAdmin()) {
+                    return;
+                }
+
+                $username = trim((string) Socialite::driver($provider)->user()->getNickname());
+                if ($username === '' || mb_strlen($username) > 255 || $username === $user->username) {
+                    return;
+                }
+
+                $taken = User::query()->where('username', $username)->where('id', '!=', $user->id)->exists();
+                if ($taken) {
+                    report(new \RuntimeException("LiveNet Auth: the username \"{$username}\" is already used on the panel, so \"{$user->username}\" was kept."));
+
+                    return;
+                }
+
+                $user->forceFill(['username' => $username])->saveQuietly();
+            } catch (Throwable $exception) {
+                // Never stop someone from signing in over a name.
+                report($exception);
+            }
         });
     }
 
