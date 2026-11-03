@@ -46,6 +46,8 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         'logout_show_login_page' => ['LIVENET_AUTH_LOGOUT_SHOW_LOGIN_PAGE', 'livenet-auth.logout_show_login_page', 'bool'],
         'logout_to_authentik' => ['LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', 'livenet-auth.logout_to_authentik', 'bool'],
         'backchannel_logout' => ['LIVENET_AUTH_BACKCHANNEL_LOGOUT', 'livenet-auth.backchannel_logout', 'bool'],
+        'back_to_site' => ['LIVENET_AUTH_BACK_TO_SITE', 'livenet-auth.back_to_site', 'bool'],
+        'back_to_site_url' => ['LIVENET_AUTH_BACK_TO_SITE_URL', 'livenet-auth.back_to_site_url', 'text'],
         'logout_url' => ['LIVENET_AUTH_LOGOUT_URL', 'livenet-auth.logout_url', 'string'],
         'logout_end_session_url' => ['LIVENET_AUTH_LOGOUT_END_SESSION_URL', 'livenet-auth.logout_end_session_url', 'string'],
         'logout_return_url' => ['LIVENET_AUTH_LOGOUT_RETURN_URL', 'livenet-auth.logout_return_url', 'string'],
@@ -228,6 +230,13 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
                     Toggle::make('logout_to_authentik')
                         ->label('Signing out also ends the Authentik login')
                         ->helperText('Then returns to the panel\'s login screen. Needs the return address below added as a "Logout" Redirect URI on the panel\'s provider in Authentik.'),
+                    Toggle::make('back_to_site')
+                        ->label('Show a "Back to livenet.host" button on the login page')
+                        ->helperText('Appears under the login form. Takes effect after the page reloads.'),
+                    TextInput::make('back_to_site_url')
+                        ->label('Where that button goes')
+                        ->url()
+                        ->maxLength(255),
                     Toggle::make('backchannel_logout')
                         ->label('Sign out here when the Authentik login ends elsewhere')
                         ->helperText('Authentik tells the panel (back-channel logout). Needs the panel provider\'s Logout URI set to https://panel.livenet.host/livenet-auth/backchannel-logout with the Back-channel method. Takes effect for sessions started after this is on.'),

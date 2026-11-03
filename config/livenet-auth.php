@@ -96,6 +96,11 @@ return [
     'backchannel_client_id' => env('LIVENET_AUTH_BACKCHANNEL_CLIENT_ID', ''),
     'backchannel_client_secret' => env('LIVENET_AUTH_BACKCHANNEL_CLIENT_SECRET', ''),
 
+    // A "Back to livenet.host" button under the panel's login form.
+    'back_to_site' => (bool) env('LIVENET_AUTH_BACK_TO_SITE', true),
+    'back_to_site_url' => env('LIVENET_AUTH_BACK_TO_SITE_URL', 'https://livenet.host/'),
+    'back_to_site_label' => env('LIVENET_AUTH_BACK_TO_SITE_LABEL', 'Back to livenet.host'),
+
     // Daily check that removes panel accounts whose Authentik account was deleted. Needs a
     // read-only Authentik API token (a service account that may only view users). It reports
     // first, and only deletes when reconcile_delete is on. It never touches root admins or

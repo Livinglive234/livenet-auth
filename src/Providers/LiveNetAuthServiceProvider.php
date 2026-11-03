@@ -103,6 +103,10 @@ class LiveNetAuthServiceProvider extends ServiceProvider
 
         $this->replaceLogoutResponse();
 
+        if (config('livenet-auth.back_to_site')) {
+            $this->addBackToSiteButton();
+        }
+
         if (config('livenet-auth.backchannel_logout')) {
             $this->trackLogin($provider);
 
@@ -111,6 +115,25 @@ class LiveNetAuthServiceProvider extends ServiceProvider
                 ->middleware('throttle:30,1')
                 ->name('livenet-auth.backchannel-logout');
         }
+    }
+
+    /** A link back to the main website, under the login form. */
+    private function addBackToSiteButton(): void
+    {
+        FilamentView::registerRenderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, function (): HtmlString {
+            $url = (string) config('livenet-auth.back_to_site_url');
+
+            if (!preg_match('#^https?://#i', $url)) {
+                return new HtmlString('');
+            }
+
+            return new HtmlString(
+                '<div style="margin-top:1rem;text-align:center">'
+                . '<a href="' . e($url) . '" style="display:inline-block;width:100%;padding:.5rem 1rem;border-radius:.5rem;'
+                . 'border:1px solid rgba(128,128,128,.4);font-size:.875rem;font-weight:600;text-decoration:none;color:inherit">'
+                . '&larr; ' . e((string) config('livenet-auth.back_to_site_label')) . '</a></div>'
+            );
+        });
     }
 
     /**
