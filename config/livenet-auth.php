@@ -61,13 +61,14 @@ return [
     // "Reset password" button) with one that links to Authentik's recovery flow.
     'reset_email_to_authentik' => (bool) env('LIVENET_AUTH_RESET_EMAIL_TO_AUTHENTIK', true),
 
-    // Signing out of the panel also ends the Authentik login, then returns to the panel's login page.
-    // Off by default: with this on, sign-out takes a trip through Authentik that can feel glitchy.
-    'logout_to_authentik' => (bool) env('LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', false),
+    // Signing out of the panel also ends the Authentik login, then lands on the panel's normal login
+    // screen (the return address below includes ?stay, so the login-skip does not bounce you
+    // straight on to Authentik).
+    'logout_to_authentik' => (bool) env('LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', true),
 
-    // When the setting above is off, sign out lands on the panel's normal login screen (with the
-    // login-skip paused so you can see it). Your Authentik login stays active, so the LiveNet
-    // button signs you straight back in. Turn this off to use Pelican's own sign-out redirect.
+    // When the setting above is off, sign out still lands on the panel's normal login screen, but
+    // your Authentik login stays active, so the LiveNet button signs you straight back in. Turn this
+    // off too to use Pelican's own sign-out redirect.
     'logout_show_login_page' => (bool) env('LIVENET_AUTH_LOGOUT_SHOW_LOGIN_PAGE', true),
 
     // Where to go after the panel signs someone out. This is Authentik's own logout flow,
@@ -80,7 +81,8 @@ return [
     // an empty value to use the general logout page above instead.
     'logout_end_session_url' => env('LIVENET_AUTH_LOGOUT_END_SESSION_URL', 'https://auth.livenet.host/application/o/pelican/end-session/'),
 
-    // Where Authentik sends people after that logout. Defaults to the panel's /login.
+    // Where Authentik sends people after that logout. Defaults to the panel's /login?stay, which must
+    // be added as a "Logout" Redirect URI on the panel's provider in Authentik (exactly, with ?stay).
     'logout_return_url' => env('LIVENET_AUTH_LOGOUT_RETURN_URL'),
 
     // Daily check that removes panel accounts whose Authentik account was deleted. Needs a

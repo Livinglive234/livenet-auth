@@ -213,11 +213,11 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
                         ->label('Replace the panel\'s password reset email')
                         ->helperText('Includes the admin Users page\'s "Reset password" button. The email links to Authentik\'s recovery flow instead.'),
                     Toggle::make('logout_show_login_page')
-                        ->label('After sign-out, show the panel\'s login screen')
-                        ->helperText('Your Authentik login stays active, so the LiveNet button signs you straight back in. Used when the next toggle is off.'),
+                        ->label('Without ending the Authentik login, still show the panel\'s login screen')
+                        ->helperText('Only used when the next toggle is off. Your Authentik login stays active, so the LiveNet button signs you straight back in.'),
                     Toggle::make('logout_to_authentik')
                         ->label('Signing out also ends the Authentik login')
-                        ->helperText('Takes a trip through Authentik, which can feel glitchy. Off by default.'),
+                        ->helperText('Then returns to the panel\'s login screen. Needs the return address below added as a "Logout" Redirect URI on the panel\'s provider in Authentik.'),
                     TextInput::make('logout_url')
                         ->label('General logout address')
                         ->helperText('Authentik\'s own logout. Used when the login token is not available.')
@@ -231,7 +231,7 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
                         ->maxLength(255),
                     TextInput::make('logout_return_url')
                         ->label('Return address after sign-out')
-                        ->helperText('Leave empty to use the panel\'s /login.')
+                        ->helperText('Leave empty to use the panel\'s /login?stay. Whatever it is must be a "Logout" Redirect URI in Authentik, exactly.')
                         ->url()
                         ->maxLength(255),
                 ]),

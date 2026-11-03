@@ -276,7 +276,8 @@ class LiveNetAuthServiceProvider extends ServiceProvider
      * its "logout response", so we replace it. If a Filament update renames that class, we do
      * nothing instead of breaking sign-out.
      *
-     * - logout_to_authentik on: end the Authentik login too, then return to the panel's login page.
+     * - logout_to_authentik on: end the Authentik login too, then return to the panel's login screen
+     *   (/login?stay, so the login-skip does not bounce straight back to Authentik).
      * - otherwise, logout_show_login_page on: show the panel's login screen (login-skip paused).
      * - otherwise: leave Pelican's own behavior alone.
      */
@@ -308,7 +309,7 @@ class LiveNetAuthServiceProvider extends ServiceProvider
         $this->app->bind($contract, fn () => new LogoutToAuthentik(
             $url,
             (string) config('livenet-auth.logout_end_session_url'),
-            (string) (config('livenet-auth.logout_return_url') ?: url('/login')),
+            (string) (config('livenet-auth.logout_return_url') ?: url('/login?stay')),
         ));
 
         $this->rememberLoginToken((string) config('livenet-auth.provider'));
