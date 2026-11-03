@@ -39,6 +39,9 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         'hide_passkeys' => ['LIVENET_AUTH_HIDE_PASSKEYS', 'livenet-auth.hide_passkeys', 'bool'],
         'block_passkeys' => ['LIVENET_AUTH_BLOCK_PASSKEYS', 'livenet-auth.block_passkeys', 'bool'],
         'disable_panel_2fa' => ['LIVENET_AUTH_DISABLE_PANEL_2FA', 'livenet-auth.disable_panel_2fa', 'bool'],
+        'show_mfa_notice' => ['LIVENET_AUTH_SHOW_MFA_NOTICE', 'livenet-auth.show_mfa_notice', 'bool'],
+        'mfa_setup_url' => ['LIVENET_AUTH_MFA_SETUP_URL', 'livenet-auth.mfa_setup_url', 'string'],
+        'mfa_recovery_codes_url' => ['LIVENET_AUTH_MFA_RECOVERY_CODES_URL', 'livenet-auth.mfa_recovery_codes_url', 'string'],
         'reset_email_to_authentik' => ['LIVENET_AUTH_RESET_EMAIL_TO_AUTHENTIK', 'livenet-auth.reset_email_to_authentik', 'bool'],
         'logout_to_authentik' => ['LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', 'livenet-auth.logout_to_authentik', 'bool'],
         'logout_url' => ['LIVENET_AUTH_LOGOUT_URL', 'livenet-auth.logout_url', 'string'],
@@ -128,6 +131,25 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
                     Toggle::make('disable_panel_2fa')
                         ->label('Remove the panel\'s own 2FA')
                         ->helperText('Removes the authenticator-app and email-code options and the 2FA tab, and forces "require 2FA" off so nobody gets locked out. Takes effect after the page reloads.'),
+                ]),
+
+            Section::make('Two-factor authentication')
+                ->description('Shown on every profile page once the panel\'s own 2FA is removed.')
+                ->schema([
+                    Toggle::make('show_mfa_notice')
+                        ->label('Show a notice that 2FA is managed by the LiveNet account'),
+                    TextInput::make('mfa_setup_url')
+                        ->label('Authenticator app setup address')
+                        ->helperText('Authentik\'s authenticator setup flow.')
+                        ->url()
+                        ->required()
+                        ->maxLength(255),
+                    TextInput::make('mfa_recovery_codes_url')
+                        ->label('Backup codes address')
+                        ->helperText('Authentik\'s recovery codes (static tokens) setup flow.')
+                        ->url()
+                        ->required()
+                        ->maxLength(255),
                 ]),
 
             Section::make('Invitations')

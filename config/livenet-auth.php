@@ -50,6 +50,13 @@ return [
     // 2FA with no way to set it up would lock people out.
     'disable_panel_2fa' => (bool) env('LIVENET_AUTH_DISABLE_PANEL_2FA', true),
 
+    // Show a notice on each profile page that two-factor authentication is managed by the LiveNet
+    // account, with buttons into Authentik's 2FA setup flows. These flows work for every signed-in
+    // user, including accounts that cannot open Authentik's normal settings pages.
+    'show_mfa_notice' => (bool) env('LIVENET_AUTH_SHOW_MFA_NOTICE', true),
+    'mfa_setup_url' => env('LIVENET_AUTH_MFA_SETUP_URL', 'https://auth.livenet.host/if/flow/default-authenticator-totp-setup/'),
+    'mfa_recovery_codes_url' => env('LIVENET_AUTH_MFA_RECOVERY_CODES_URL', 'https://auth.livenet.host/if/flow/default-authenticator-static-setup/'),
+
     // Replace Pelican's own password reset email (including the admin Users page's
     // "Reset password" button) with one that links to Authentik's recovery flow.
     'reset_email_to_authentik' => (bool) env('LIVENET_AUTH_RESET_EMAIL_TO_AUTHENTIK', true),
