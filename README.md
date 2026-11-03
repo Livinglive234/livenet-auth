@@ -67,3 +67,20 @@ Do this **last**, after you have checked that signing in with the LiveNet button
 - The invited person must use **the same email address** the invite was sent to. If they sign up with a different one, they get a separate panel account with no server access, and the owner has to invite that address.
 - Pelican creates a panel account for any email a server owner types in. This plugin doesn't change that.
 - Hiding the link button is a CSS rule that matches the button's internal name. If a Pelican update renames it, the button may reappear. The server-side check keeps working either way.
+
+## Releasing and updating
+
+The panel checks `update_url` in `plugin.json`, which points at `update.json` in this repo. That file says the newest version, where to download the zip, and its checksum.
+
+To publish a new version (from a clone on your own computer):
+
+```bash
+./release.sh 1.0.1
+git add -A && git commit -m "Release v1.0.1"
+git tag v1.0.1 && git push && git push --tags
+gh release create v1.0.1 dist/livenet-auth.zip --title "v1.0.1" --notes "Release v1.0.1"
+```
+
+Upload exactly the zip the script built, or the checksum in `update.json` won't match. Publish the release right after pushing, because `update.json` points at it.
+
+The panel then shows an update on the Plugins page.
