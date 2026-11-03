@@ -101,7 +101,7 @@ Do this **last**, after you have checked that signing in with the LiveNet button
 
 The panel checks `update_url` in `plugin.json`, which points at `update.json` in this repo. That file says the newest version, where to download the zip, and its checksum. The panel caches it for about 10 minutes.
 
-To publish a new version, from a clone on your own computer, with your changes already committed and pushed to `main`:
+To publish a new version, use the local `publish.sh` script. It is deliberately not in this repository (it is listed in `.gitignore`), so it only exists on the computer that publishes. From that clone, with your changes already committed and pushed to `main`:
 
 ```bash
 ./publish.sh 1.4.1
@@ -109,4 +109,4 @@ To publish a new version, from a clone on your own computer, with your changes a
 
 It checks you're on `main` with nothing uncommitted and in sync with GitHub, asks before publishing, then bumps the version, builds `livenet-auth.zip`, writes `update.json` with the checksum, tags the commit, pushes, and creates a GitHub release with the zip attached. The panel then shows an update on its Plugins page, and you can update in place.
 
-The first install must come from a version that already has `update_url` in its `plugin.json` (1.4.0 and later). `./release.sh <version>` does just the build step, if you want to make a zip without publishing.
+The first install must come from a version that already has `update_url` in its `plugin.json` (1.4.0 and later). `./release.sh <version>` (in this repository) does just the build step, if you want to make a zip without publishing. To recreate `publish.sh` on another computer, it only needs to run `release.sh`, commit, tag and push, then `gh release create` with the zip.

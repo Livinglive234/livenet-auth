@@ -20,7 +20,7 @@ PY
 
 # 2. build dist/livenet-auth.zip with a top-level "livenet-auth/" folder
 rm -rf dist && mkdir -p "dist/build/$NAME"
-git ls-files -co --exclude-standard | grep -vE '^(dist/|release\.sh$|update\.json$|\.gitignore$|.*\.zip$)' | while read -r f; do
+git ls-files -co --exclude-standard | grep -vE '^(dist/|release\.sh$|publish\.sh$|update\.json$|\.gitignore$|.*\.zip$)' | while read -r f; do
   mkdir -p "dist/build/$NAME/$(dirname "$f")"
   cp "$f" "dist/build/$NAME/$f"
 done
