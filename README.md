@@ -12,8 +12,9 @@ What it does:
 6. **Sends "forgot password" to Authentik's recovery flow**, since a panel password can no longer be used to sign in.
 7. **Hides the passkey buttons** so nobody sets one up (optionally blocks passkey sign-in completely).
 8. **Sends the panel's 2FA tab to the LiveNet account.** The tab stays exactly as Pelican draws it, and clicking it (or opening the old `?tab=2fa` address) goes to the website's 2FA page. It forces `APP_2FA_REQUIRED` to 0 so nobody is locked out. You can instead remove the tab entirely and show a plain button.
-9. **Replaces the panel's password reset email** (including the admin Users page's "Reset password" button) with one that links to Authentik's recovery flow.
-10. **Signs you out of Authentik too** when you sign out of the panel, and returns you to the panel's login page (which then sends you to Authentik). On sign-in it keeps your Authentik login token in the panel's server-side session so it can do this. (An earlier version used a cookie, which was too large and broke sign-in with a 502.)
+9. **Cleans up deleted accounts.** Once a day it removes panel accounts whose Authentik account no longer exists (read-only token, reports first, never touches admins or accounts that own servers).
+10. **Replaces the panel's password reset email** (including the admin Users page's "Reset password" button). Someone already linked to a LiveNet login gets a link to Authentik's recovery flow. Someone who used the panel before LiveNet logins existed gets an email telling them to create a LiveNet account with the same email address, so their servers are matched to them.
+11. **Signs you out of Authentik too** when you sign out of the panel, and returns you to the panel's login page (which then sends you to Authentik). On sign-in it keeps your Authentik login token in the panel's server-side session so it can do this. (An earlier version used a cookie, which was too large and broke sign-in with a 502.)
 
 **Status:** tested on a live panel (imported as a zip through Admin → Plugins):
 
@@ -26,7 +27,8 @@ What it does:
 | Forgot-password redirect | **untested** |
 | Sign out also ends the Authentik login, then returns to the panel's login | works (v1.4.1) |
 | Settings page | **untested** |
-| Replaced reset email | **untested** |
+| Replaced reset email (both wordings) | **untested** |
+| Daily cleanup of deleted accounts | **untested** |
 | Hide passkey buttons | **untested** |
 | Block passkey routes (off by default) | **untested** |
 | Remove panel 2FA | **untested** |
@@ -49,6 +51,15 @@ It was written without PHP available, so run the lint step below before enabling
    ```bash
    cd /var/www/pelican && sudo -u www-data php artisan optimize:clear
    ```
+
+## Cleaning up deleted accounts
+
+1. In Authentik, create a **service account** (Directory, Users) and give it only permission to view users (for example through a role with "Can view user", assigned to a group the account belongs to). Then create an **API token** for it (Directory, Tokens and App passwords, intent "API Token"). Exact screens differ a little between Authentik versions.
+2. In the plugin's Settings, paste the token, turn on **Run the daily check**, and leave **Delete** off.
+3. See what it would do: `cd /var/www/pelican && sudo -u www-data php artisan livenet-auth:reconcile --dry-run`
+4. When the report looks right, turn on **Delete the accounts it finds**.
+
+It matches by email or username, and does nothing if Authentik doesn't answer clearly.
 
 ## Settings page
 
@@ -74,6 +85,11 @@ Status: **untested** (written without PHP available).
 | `LIVENET_AUTH_DISABLE_PANEL_2FA` | `false` | Remove the 2FA tab and the panel's own 2FA options (a plain button is shown instead). |
 | `LIVENET_AUTH_SHOW_MFA_NOTICE` | `true` | Send the 2FA tab's click, and the old tab address, to the website's 2FA page. |
 | `LIVENET_AUTH_MFA_PAGE_URL` | `https://livenet.host/account/2fa` | The website page for setting up 2FA. |
+| `LIVENET_AUTH_RECONCILE_ENABLED` | `false` | Run the daily cleanup of accounts deleted in Authentik. |
+| `LIVENET_AUTH_RECONCILE_DELETE` | `false` | Delete what it finds. Off = report only. |
+| `LIVENET_AUTH_RECONCILE_MAX_DELETES` | `3` | Refuse to delete more than this many in one run. |
+| `LIVENET_AUTH_AUTHENTIK_URL` | `https://auth.livenet.host` | Where Authentik is. |
+| `LIVENET_AUTH_AUTHENTIK_API_TOKEN` | empty | Read-only Authentik token (a secret). |
 | `LIVENET_AUTH_RESET_EMAIL_TO_AUTHENTIK` | `true` | Replace Pelican's reset email with one linking to Authentik's recovery flow. |
 | `LIVENET_AUTH_LOGOUT_TO_AUTHENTIK` | `true` | Panel sign-out also ends the Authentik login. |
 | `LIVENET_AUTH_LOGOUT_URL` | `https://auth.livenet.host/flows/-/default/invalidation/` | Where to go after panel sign-out. |

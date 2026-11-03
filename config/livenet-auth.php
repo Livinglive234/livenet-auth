@@ -77,6 +77,16 @@ return [
     // Where Authentik sends people after that logout. Defaults to the panel's /login.
     'logout_return_url' => env('LIVENET_AUTH_LOGOUT_RETURN_URL'),
 
+    // Daily check that removes panel accounts whose Authentik account was deleted. Needs a
+    // read-only Authentik API token (a service account that may only view users). It reports
+    // first, and only deletes when reconcile_delete is on. It never touches root admins or
+    // accounts that own servers, and refuses to delete more than reconcile_max_deletes at once.
+    'reconcile_enabled' => (bool) env('LIVENET_AUTH_RECONCILE_ENABLED', false),
+    'authentik_url' => env('LIVENET_AUTH_AUTHENTIK_URL', 'https://auth.livenet.host'),
+    'authentik_api_token' => env('LIVENET_AUTH_AUTHENTIK_API_TOKEN', ''),
+    'reconcile_delete' => (bool) env('LIVENET_AUTH_RECONCILE_DELETE', false),
+    'reconcile_max_deletes' => (int) env('LIVENET_AUTH_RECONCILE_MAX_DELETES', 3),
+
     // Skip the login page and go straight to Authentik. Visit /login?stay to see the page anyway.
     'skip_login_page' => (bool) env('LIVENET_AUTH_SKIP_LOGIN', false),
 ];

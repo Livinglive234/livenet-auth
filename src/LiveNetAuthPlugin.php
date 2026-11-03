@@ -48,6 +48,12 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         'logout_return_url' => ['LIVENET_AUTH_LOGOUT_RETURN_URL', 'livenet-auth.logout_return_url', 'string'],
         'skip_login_page' => ['LIVENET_AUTH_SKIP_LOGIN', 'livenet-auth.skip_login_page', 'bool'],
 
+        'reconcile_enabled' => ['LIVENET_AUTH_RECONCILE_ENABLED', 'livenet-auth.reconcile_enabled', 'bool'],
+        'reconcile_delete' => ['LIVENET_AUTH_RECONCILE_DELETE', 'livenet-auth.reconcile_delete', 'bool'],
+        'reconcile_max_deletes' => ['LIVENET_AUTH_RECONCILE_MAX_DELETES', 'livenet-auth.reconcile_max_deletes', 'string'],
+        'authentik_url' => ['LIVENET_AUTH_AUTHENTIK_URL', 'livenet-auth.authentik_url', 'string'],
+        'authentik_api_token' => ['LIVENET_AUTH_AUTHENTIK_API_TOKEN', 'livenet-auth.authentik_api_token', 'secret'],
+
         'disable_password_login' => ['AUTH_DISABLE_PASSWORD_LOGIN', 'auth.disable_password_login', 'bool'],
         'send_account_created' => ['PANEL_SEND_ACCOUNT_CREATED_NOTIFICATION', 'panel.email.send_account_created_notification', 'bool'],
         'send_added_to_server' => ['PANEL_SEND_ADDED_TO_SERVER_NOTIFICATION', 'panel.email.send_added_to_server_notification', 'bool'],
@@ -81,7 +87,7 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
 
         foreach (self::OPTIONS as $key => [, $configKey, $type]) {
             $value = config($configKey);
-            $data[$key] = $type === 'bool' ? (bool) $value : (string) ($value ?? '');
+            $data[$key] = $type === 'bool' ? (bool) $value : ($type === 'secret' ? '' : (string) ($value ?? ''));
         }
 
         return $data;
@@ -143,6 +149,36 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
                         ->helperText('The website page where people set up an authenticator app and backup codes.')
                         ->url()
                         ->required()
+                        ->maxLength(255),
+                ]),
+
+            Section::make('Clean up deleted accounts')
+                ->description('Once a day, removes panel accounts whose LiveNet (Authentik) account no longer exists, so a stranger who later signs up with that email cannot be linked to the old account. Needs a read-only Authentik token. Never touches admins or accounts that own servers.')
+                ->schema([
+                    Toggle::make('reconcile_enabled')
+                        ->label('Run the daily check')
+                        ->helperText('Takes effect on the next scheduled run. To see what it would do right now: php artisan livenet-auth:reconcile --dry-run'),
+                    Toggle::make('reconcile_delete')
+                        ->label('Delete the accounts it finds')
+                        ->helperText('Off = report only (to the panel log and the command output). Leave this off until you have seen a report that looks right.'),
+                    TextInput::make('reconcile_max_deletes')
+                        ->label('Most accounts it may delete in one run')
+                        ->helperText('If it finds more than this, it deletes nothing and logs a warning.')
+                        ->numeric()
+                        ->minValue(1)
+                        ->maxValue(50)
+                        ->required(),
+                    TextInput::make('authentik_url')
+                        ->label('Authentik address')
+                        ->url()
+                        ->required()
+                        ->maxLength(255),
+                    TextInput::make('authentik_api_token')
+                        ->label('Authentik read-only API token')
+                        ->helperText('A token for a service account that can only view users. Saved in .env. Leave blank to keep the saved one.')
+                        ->password()
+                        ->revealable()
+                        ->autocomplete(false)
                         ->maxLength(255),
                 ]),
 
@@ -218,6 +254,11 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
 
         foreach (self::OPTIONS as $key => [$envName, , $type]) {
             $value = $data[$key] ?? ($type === 'bool' ? false : '');
+
+            // A blank secret means "keep the one that is saved".
+            if ($type === 'secret' && trim((string) $value) === '') {
+                continue;
+            }
 
             $values[$envName] = $type === 'bool' ? ($value ? 'true' : 'false') : trim((string) $value);
         }

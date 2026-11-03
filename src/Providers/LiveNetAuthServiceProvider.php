@@ -8,12 +8,14 @@ use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Notifications\Events\NotificationSending;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use LiveNet\LiveNetAuth\Console\ReconcileUsers;
 use LiveNet\LiveNetAuth\Http\Middleware\BlockPasskeys;
 use LiveNet\LiveNetAuth\Http\Responses\LogoutToAuthentik;
 use LiveNet\LiveNetAuth\Notifications\AuthentikPasswordReset;
@@ -60,6 +62,17 @@ class LiveNetAuthServiceProvider extends ServiceProvider
 
         if (config('livenet-auth.redirect_password_reset')) {
             $this->redirectPasswordReset();
+        }
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([ReconcileUsers::class]);
+        }
+
+        if (config('livenet-auth.reconcile_enabled')) {
+            // Pelican's cron already runs the scheduler, so this runs once a day by itself.
+            $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+                $schedule->command('livenet-auth:reconcile')->dailyAt('04:20')->withoutOverlapping();
+            });
         }
 
         if (config('livenet-auth.hide_passkeys')) {
@@ -345,7 +358,13 @@ class LiveNetAuthServiceProvider extends ServiceProvider
             }
 
             try {
-                $event->notifiable->notify(new AuthentikPasswordReset((string) config('livenet-auth.recovery_url')));
+                $linked = isset(self::asArray($event->notifiable->oauth)[(string) config('livenet-auth.provider')]);
+
+                $event->notifiable->notify(new AuthentikPasswordReset(
+                    (string) config('livenet-auth.recovery_url'),
+                    $linked,
+                    (string) config('livenet-auth.signup_url'),
+                ));
             } catch (Throwable $exception) {
                 report($exception);
 
