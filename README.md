@@ -10,6 +10,7 @@ What it does:
 4. **Keeps usernames in step.** Each time someone signs in with Authentik, the panel account's username is set to their Authentik username. This fixes the placeholder name an invited person gets (like `kai3x9`) once they create their LiveNet account. Root admins are skipped, and a name that's already taken is left alone (it's written to the panel's log).
 5. **Optionally skips the login page** and goes straight to Authentik.
 6. **Sends "forgot password" to Authentik's recovery flow**, since a panel password can no longer be used to sign in.
+7. **Signs you out of Authentik too** when you sign out of the panel.
 
 **Status:** tested on a live panel (imported as a zip through Admin → Plugins):
 
@@ -20,6 +21,7 @@ What it does:
 | Subuser invite email | works |
 | Skip the login page | works |
 | Forgot-password redirect | **untested** |
+| Sign out also ends the Authentik login | **untested** |
 | Username sync | **untested**. It relies on Socialite remembering the user fetched earlier in the same request. |
 
 It was written without PHP available, so run the lint step below before enabling it. Install it by importing the zip in Admin → Plugins; copying the folder by hand did not work reliably.
@@ -52,6 +54,8 @@ It was written without PHP available, so run the lint step below before enabling
 | `LIVENET_AUTH_SIGNUP_URL` | `https://auth.livenet.host/if/flow/default-enrollment-flow/` | Where "Create your LiveNet account" goes. `?email=` is added. |
 | `LIVENET_AUTH_REDIRECT_PASSWORD_RESET` | `true` | Send the panel's forgot-password page to Authentik. |
 | `LIVENET_AUTH_RECOVERY_URL` | `https://auth.livenet.host/if/flow/default-recovery-flow/` | Authentik's recovery flow. Check this matches your flow's slug. |
+| `LIVENET_AUTH_LOGOUT_TO_AUTHENTIK` | `true` | Panel sign-out also ends the Authentik login. |
+| `LIVENET_AUTH_LOGOUT_URL` | `https://auth.livenet.host/flows/-/default/invalidation/` | Where to go after panel sign-out. |
 | `LIVENET_AUTH_SKIP_LOGIN` | `false` | Go straight to Authentik from the login page. Add `?stay` to the URL to see the page. |
 
 Also set these panel settings, so Pelican doesn't send its own emails too:

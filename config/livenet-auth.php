@@ -37,6 +37,13 @@ return [
     // and copy the address if this guess is wrong.
     'recovery_url' => env('LIVENET_AUTH_RECOVERY_URL', 'https://auth.livenet.host/if/flow/default-recovery-flow/'),
 
+    // Signing out of the panel also signs you out of Authentik.
+    'logout_to_authentik' => (bool) env('LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', true),
+
+    // Where to go after the panel signs someone out. This is Authentik's own logout flow,
+    // which ends the Authentik login.
+    'logout_url' => env('LIVENET_AUTH_LOGOUT_URL', 'https://auth.livenet.host/flows/-/default/invalidation/'),
+
     // Skip the login page and go straight to Authentik. Visit /login?stay to see the page anyway.
     'skip_login_page' => (bool) env('LIVENET_AUTH_SKIP_LOGIN', false),
 ];

@@ -12,6 +12,7 @@ use Illuminate\Support\HtmlString;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use LiveNet\LiveNetAuth\Http\Responses\LogoutToAuthentik;
 use LiveNet\LiveNetAuth\Notifications\InvitedToServer;
 use Throwable;
 
@@ -52,6 +53,10 @@ class LiveNetAuthServiceProvider extends ServiceProvider
 
         if (config('livenet-auth.redirect_password_reset')) {
             $this->redirectPasswordReset();
+        }
+
+        if (config('livenet-auth.logout_to_authentik')) {
+            $this->logoutToAuthentik();
         }
     }
 
@@ -223,6 +228,26 @@ class LiveNetAuthServiceProvider extends ServiceProvider
                 . '<noscript><p style="text-align:center;margin:2rem"><a href="' . e($url) . '">Reset your password with your LiveNet account</a></p></noscript>'
             );
         });
+    }
+
+    /**
+     * After the panel signs someone out, send them to Authentik's logout so the Authentik
+     * login ends too. Filament asks the container for its "logout response", so we replace
+     * it. If a Filament update renames that class, we do nothing instead of breaking sign-out.
+     */
+    private function logoutToAuthentik(): void
+    {
+        $contract = 'Filament\\Auth\\Http\\Responses\\Contracts\\LogoutResponse';
+
+        if (!interface_exists($contract)) {
+            report(new \RuntimeException("LiveNet Auth: {$contract} was not found, so sign-out was left alone."));
+
+            return;
+        }
+
+        $url = (string) config('livenet-auth.logout_url');
+
+        $this->app->bind($contract, fn () => new LogoutToAuthentik($url));
     }
 
     /** @return array<string, mixed> */
