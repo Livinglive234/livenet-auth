@@ -10,7 +10,17 @@ What it does:
 4. **Keeps usernames in step.** Each time someone signs in with Authentik, the panel account's username is set to their Authentik username. This fixes the placeholder name an invited person gets (like `kai3x9`) once they create their LiveNet account. Root admins are skipped, and a name that's already taken is left alone (it's written to the panel's log).
 5. **Optionally skips the login page** and goes straight to Authentik.
 
-Not tested on a running panel yet. There was no PHP available where it was written, so run the lint step below before enabling it.
+**Status: nothing here has been tested on a running panel yet.** In particular:
+
+| Feature | Status |
+|---|---|
+| Keep the Authentik link | untested |
+| Lock synced accounts | untested (the same flag was set by hand and works) |
+| Subuser invite email | untested |
+| Username sync | untested. It relies on Socialite remembering the user fetched earlier in the same request. |
+| Skip the login page | untested |
+
+Also, There was no PHP available where it was written, so run the lint step below before enabling it.
 
 ## Install
 
