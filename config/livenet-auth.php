@@ -37,6 +37,10 @@ return [
     // and copy the address if this guess is wrong.
     'recovery_url' => env('LIVENET_AUTH_RECOVERY_URL', 'https://auth.livenet.host/if/flow/default-recovery-flow/'),
 
+    // Replace Pelican's own password reset email (including the admin Users page's
+    // "Reset password" button) with one that links to Authentik's recovery flow.
+    'reset_email_to_authentik' => (bool) env('LIVENET_AUTH_RESET_EMAIL_TO_AUTHENTIK', true),
+
     // Signing out of the panel also signs you out of Authentik.
     'logout_to_authentik' => (bool) env('LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', true),
 

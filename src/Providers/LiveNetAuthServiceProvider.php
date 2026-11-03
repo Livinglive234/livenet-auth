@@ -8,12 +8,14 @@ use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Notifications\Events\NotificationSending;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use LiveNet\LiveNetAuth\Http\Responses\LogoutToAuthentik;
+use LiveNet\LiveNetAuth\Notifications\AuthentikPasswordReset;
 use LiveNet\LiveNetAuth\Notifications\InvitedToServer;
 use Throwable;
 
@@ -57,6 +59,10 @@ class LiveNetAuthServiceProvider extends ServiceProvider
 
         if (config('livenet-auth.redirect_password_reset')) {
             $this->redirectPasswordReset();
+        }
+
+        if (config('livenet-auth.reset_email_to_authentik')) {
+            $this->replaceResetEmail();
         }
 
         if (config('livenet-auth.logout_to_authentik')) {
@@ -300,6 +306,34 @@ class LiveNetAuthServiceProvider extends ServiceProvider
             } catch (Throwable $exception) {
                 report($exception);
             }
+        });
+    }
+
+    /**
+     * Laravel announces every notification just before it is sent. When it is Pelican's
+     * "reset your password" email, cancel it and send ours instead, which links to
+     * Authentik's recovery flow. If ours cannot be sent, Pelican's email goes out as usual.
+     */
+    private function replaceResetEmail(): void
+    {
+        Event::listen(NotificationSending::class, function (NotificationSending $event): ?bool {
+            if (!$event->notification instanceof \Filament\Auth\Notifications\ResetPassword) {
+                return null;
+            }
+
+            if ($event->channel !== 'mail' || !$event->notifiable instanceof User) {
+                return null;
+            }
+
+            try {
+                $event->notifiable->notify(new AuthentikPasswordReset((string) config('livenet-auth.recovery_url')));
+            } catch (Throwable $exception) {
+                report($exception);
+
+                return null;
+            }
+
+            return false;
         });
     }
 

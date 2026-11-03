@@ -36,6 +36,7 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         'signup_url' => ['LIVENET_AUTH_SIGNUP_URL', 'livenet-auth.signup_url', 'string'],
         'redirect_password_reset' => ['LIVENET_AUTH_REDIRECT_PASSWORD_RESET', 'livenet-auth.redirect_password_reset', 'bool'],
         'recovery_url' => ['LIVENET_AUTH_RECOVERY_URL', 'livenet-auth.recovery_url', 'string'],
+        'reset_email_to_authentik' => ['LIVENET_AUTH_RESET_EMAIL_TO_AUTHENTIK', 'livenet-auth.reset_email_to_authentik', 'bool'],
         'logout_to_authentik' => ['LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', 'livenet-auth.logout_to_authentik', 'bool'],
         'logout_url' => ['LIVENET_AUTH_LOGOUT_URL', 'livenet-auth.logout_url', 'string'],
         'logout_end_session_url' => ['LIVENET_AUTH_LOGOUT_END_SESSION_URL', 'livenet-auth.logout_end_session_url', 'string'],
@@ -126,6 +127,9 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
                         ->url()
                         ->required()
                         ->maxLength(255),
+                    Toggle::make('reset_email_to_authentik')
+                        ->label('Replace the panel\'s password reset email')
+                        ->helperText('Includes the admin Users page\'s "Reset password" button. The email links to Authentik\'s recovery flow instead.'),
                     Toggle::make('logout_to_authentik')
                         ->label('Signing out also ends the Authentik login'),
                     TextInput::make('logout_url')
