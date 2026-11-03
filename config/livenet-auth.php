@@ -37,8 +37,13 @@ return [
     // and copy the address if this guess is wrong.
     'recovery_url' => env('LIVENET_AUTH_RECOVERY_URL', 'https://auth.livenet.host/if/flow/default-recovery-flow/'),
 
-    // Block passkey sign-in on the panel. A passkey would skip Authentik entirely.
-    'disable_passkeys' => (bool) env('LIVENET_AUTH_DISABLE_PASSKEYS', true),
+    // Hide every passkey button (the login page's and the profile page's passkey tab), so people
+    // never set one up. This only hides the buttons. The passkey routes still work, so anyone who
+    // already has a passkey, or finds the endpoints, can still use one.
+    'hide_passkeys' => (bool) env('LIVENET_AUTH_HIDE_PASSKEYS', true),
+
+    // Also block the passkey routes completely (404), so passkeys cannot be used at all.
+    'block_passkeys' => (bool) env('LIVENET_AUTH_BLOCK_PASSKEYS', false),
 
     // Remove the panel's own two-factor options (authenticator app and email codes), since
     // Authentik handles sign-in now. This also forces APP_2FA_REQUIRED to 0, because requiring

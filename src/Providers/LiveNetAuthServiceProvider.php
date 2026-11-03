@@ -62,8 +62,12 @@ class LiveNetAuthServiceProvider extends ServiceProvider
             $this->redirectPasswordReset();
         }
 
-        if (config('livenet-auth.disable_passkeys')) {
-            $this->disablePasskeys();
+        if (config('livenet-auth.hide_passkeys')) {
+            $this->hidePasskeys();
+        }
+
+        if (config('livenet-auth.block_passkeys')) {
+            $this->app['router']->pushMiddlewareToGroup('web', BlockPasskeys::class);
         }
 
         if (config('livenet-auth.disable_panel_2fa')) {
@@ -348,16 +352,27 @@ class LiveNetAuthServiceProvider extends ServiceProvider
         });
     }
 
-    /** Block the passkey routes, and hide the buttons that would use them. */
-    private function disablePasskeys(): void
+    /**
+     * Hide every passkey button so nobody sets one up. This is only cosmetic: the passkey
+     * routes still work. A small stylesheet handles the known buttons, and a short script
+     * hides anything else on the page that mentions "passkey" (it also covers pages loaded
+     * without a full reload, and translated labels).
+     */
+    private function hidePasskeys(): void
     {
-        $this->app['router']->pushMiddlewareToGroup('web', BlockPasskeys::class);
-
-        // Cosmetic only: the middleware above is what actually stops passkeys. If a Pelican
-        // update renames these, a dead button may show, but it will not work.
         FilamentView::registerRenderHook(
             PanelsRenderHook::HEAD_END,
-            fn (): HtmlString => new HtmlString('<style>[x-on\\:click*="authenticateWithPasskey"],[x-on\\:click*="passkeys::data::tab"]{display:none!important}</style>'),
+            fn (): HtmlString => new HtmlString(
+                '<style>[x-on\\:click*="passkey" i],[wire\\:snapshot*="filament-passkeys"]{display:none!important}</style>'
+                . '<script data-navigate-once>(function(){'
+                . 'var re=/passkey/i,t;'
+                . 'function hide(){document.querySelectorAll("button,a,[role=tab]").forEach(function(e){'
+                . 'if(re.test(e.textContent||"")||re.test(e.getAttribute("x-on:click")||""))e.style.display="none";});}'
+                . 'new MutationObserver(function(){cancelAnimationFrame(t);t=requestAnimationFrame(hide);})'
+                . '.observe(document.documentElement,{childList:true,subtree:true});'
+                . 'document.addEventListener("DOMContentLoaded",hide);'
+                . '})();</script>'
+            ),
         );
     }
 

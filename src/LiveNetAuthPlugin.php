@@ -36,7 +36,8 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         'signup_url' => ['LIVENET_AUTH_SIGNUP_URL', 'livenet-auth.signup_url', 'string'],
         'redirect_password_reset' => ['LIVENET_AUTH_REDIRECT_PASSWORD_RESET', 'livenet-auth.redirect_password_reset', 'bool'],
         'recovery_url' => ['LIVENET_AUTH_RECOVERY_URL', 'livenet-auth.recovery_url', 'string'],
-        'disable_passkeys' => ['LIVENET_AUTH_DISABLE_PASSKEYS', 'livenet-auth.disable_passkeys', 'bool'],
+        'hide_passkeys' => ['LIVENET_AUTH_HIDE_PASSKEYS', 'livenet-auth.hide_passkeys', 'bool'],
+        'block_passkeys' => ['LIVENET_AUTH_BLOCK_PASSKEYS', 'livenet-auth.block_passkeys', 'bool'],
         'disable_panel_2fa' => ['LIVENET_AUTH_DISABLE_PANEL_2FA', 'livenet-auth.disable_panel_2fa', 'bool'],
         'reset_email_to_authentik' => ['LIVENET_AUTH_RESET_EMAIL_TO_AUTHENTIK', 'livenet-auth.reset_email_to_authentik', 'bool'],
         'logout_to_authentik' => ['LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', 'livenet-auth.logout_to_authentik', 'bool'],
@@ -118,9 +119,12 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
             Section::make('Other ways to sign in')
                 ->description('Authentik handles sign-in and 2FA now. These remove the panel\'s own options so nothing skips Authentik.')
                 ->schema([
-                    Toggle::make('disable_passkeys')
-                        ->label('Block passkey sign-in')
-                        ->helperText('A passkey would skip Authentik entirely.'),
+                    Toggle::make('hide_passkeys')
+                        ->label('Hide passkey buttons')
+                        ->helperText('So nobody sets one up. Only hides the buttons: existing passkeys and the sign-in route still work.'),
+                    Toggle::make('block_passkeys')
+                        ->label('Also block passkey sign-in completely')
+                        ->helperText('Makes the passkey routes return "not found", so passkeys cannot be used at all. A passkey would skip Authentik.'),
                     Toggle::make('disable_panel_2fa')
                         ->label('Remove the panel\'s own 2FA')
                         ->helperText('Removes the authenticator-app and email-code options and the 2FA tab, and forces "require 2FA" off so nobody gets locked out. Takes effect after the page reloads.'),
