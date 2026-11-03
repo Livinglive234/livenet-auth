@@ -10,6 +10,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Panel;
 use Filament\Schemas\Components\Section;
+use LiveNet\LiveNetAuth\Http\Middleware\EndRevokedSessions;
 
 /**
  * The work happens in Providers/LiveNetAuthServiceProvider.php, which Pelican loads
@@ -44,6 +45,7 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         'reset_email_to_authentik' => ['LIVENET_AUTH_RESET_EMAIL_TO_AUTHENTIK', 'livenet-auth.reset_email_to_authentik', 'bool'],
         'logout_show_login_page' => ['LIVENET_AUTH_LOGOUT_SHOW_LOGIN_PAGE', 'livenet-auth.logout_show_login_page', 'bool'],
         'logout_to_authentik' => ['LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', 'livenet-auth.logout_to_authentik', 'bool'],
+        'backchannel_logout' => ['LIVENET_AUTH_BACKCHANNEL_LOGOUT', 'livenet-auth.backchannel_logout', 'bool'],
         'logout_url' => ['LIVENET_AUTH_LOGOUT_URL', 'livenet-auth.logout_url', 'string'],
         'logout_end_session_url' => ['LIVENET_AUTH_LOGOUT_END_SESSION_URL', 'livenet-auth.logout_end_session_url', 'string'],
         'logout_return_url' => ['LIVENET_AUTH_LOGOUT_RETURN_URL', 'livenet-auth.logout_return_url', 'string'],
@@ -67,6 +69,14 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
 
     public function register(Panel $panel): void
     {
+        if (config('livenet-auth.enabled', true) && config('livenet-auth.backchannel_logout', true)) {
+            try {
+                $panel->authMiddleware([EndRevokedSessions::class], isPersistent: true);
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        }
+
         // Optional: drop the panel's own two-factor options, which also removes the 2FA tab on the
         // profile page. Off by default, because the tab is kept and redirected instead. A failure
         // here must never break the panel.
@@ -218,6 +228,9 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
                     Toggle::make('logout_to_authentik')
                         ->label('Signing out also ends the Authentik login')
                         ->helperText('Then returns to the panel\'s login screen. Needs the return address below added as a "Logout" Redirect URI on the panel\'s provider in Authentik.'),
+                    Toggle::make('backchannel_logout')
+                        ->label('Sign out here when the Authentik login ends elsewhere')
+                        ->helperText('Authentik tells the panel (back-channel logout). Needs the panel provider\'s Logout URI set to https://panel.livenet.host/livenet-auth/backchannel-logout with the Back-channel method. Takes effect for sessions started after this is on.'),
                     TextInput::make('logout_url')
                         ->label('General logout address')
                         ->helperText('Authentik\'s own logout. Used when the login token is not available.')

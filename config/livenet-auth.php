@@ -85,6 +85,17 @@ return [
     // be added as a "Logout" Redirect URI on the panel's provider in Authentik (exactly, with ?stay).
     'logout_return_url' => env('LIVENET_AUTH_LOGOUT_RETURN_URL'),
 
+    // End a panel session when Authentik says the person's login ended somewhere else (signing out on
+    // the website, for example). Authentik calls this plugin's /livenet-auth/backchannel-logout address,
+    // so the panel's provider in Authentik needs that as its Logout URI with the Back-channel method.
+    'backchannel_logout' => (bool) env('LIVENET_AUTH_BACKCHANNEL_LOGOUT', true),
+    // The provider's issuer (the address under /application/o/<slug>/). Left empty, it is worked out
+    // from the end-session address above. The client id and secret are normally read from the panel's
+    // own Authentik OAuth settings; set these only if that does not work.
+    'backchannel_issuer' => env('LIVENET_AUTH_BACKCHANNEL_ISSUER', ''),
+    'backchannel_client_id' => env('LIVENET_AUTH_BACKCHANNEL_CLIENT_ID', ''),
+    'backchannel_client_secret' => env('LIVENET_AUTH_BACKCHANNEL_CLIENT_SECRET', ''),
+
     // Daily check that removes panel accounts whose Authentik account was deleted. Needs a
     // read-only Authentik API token (a service account that may only view users). It reports
     // first, and only deletes when reconcile_delete is on. It never touches root admins or

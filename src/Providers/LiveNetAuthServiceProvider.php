@@ -11,12 +11,15 @@ use Illuminate\Auth\Events\Logout;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Notifications\Events\NotificationSending;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use LiveNet\LiveNetAuth\Console\ReconcileUsers;
+use LiveNet\LiveNetAuth\Http\Controllers\BackchannelLogout;
 use LiveNet\LiveNetAuth\Http\Middleware\BlockPasskeys;
+use LiveNet\LiveNetAuth\Http\Middleware\EndRevokedSessions;
 use LiveNet\LiveNetAuth\Http\Responses\LogoutToAuthentik;
 use LiveNet\LiveNetAuth\Http\Responses\LogoutToLoginPage;
 use LiveNet\LiveNetAuth\Notifications\AuthentikPasswordReset;
@@ -99,6 +102,48 @@ class LiveNetAuthServiceProvider extends ServiceProvider
         }
 
         $this->replaceLogoutResponse();
+
+        if (config('livenet-auth.backchannel_logout')) {
+            $this->trackLogin($provider);
+
+            // No "web" middleware on purpose: Authentik's server calls this, with no session or CSRF token.
+            Route::post('/livenet-auth/backchannel-logout', BackchannelLogout::class)
+                ->middleware('throttle:30,1')
+                ->name('livenet-auth.backchannel-logout');
+        }
+    }
+
+    /**
+     * Remember which Authentik login a panel session came from, and when it began (by Authentik's
+     * own clock), so a back-channel logout notice can end the right sessions.
+     */
+    private function trackLogin(string $provider): void
+    {
+        Event::listen(Login::class, function () use ($provider): void {
+            try {
+                $request = request();
+                if (!$request->routeIs('auth.oauth.callback') || $request->route('driver') !== $provider) {
+                    return;
+                }
+
+                $oauthUser = Socialite::driver($provider)->user();
+                $idToken = $oauthUser->accessTokenResponseBody['id_token'] ?? null;
+                $payload = is_string($idToken) ? explode('.', $idToken) : [];
+                $claims = isset($payload[1])
+                    ? json_decode((string) base64_decode(strtr($payload[1], '-_', '+/')), true)
+                    : null;
+                $claims = is_array($claims) ? $claims : [];
+
+                $sub = (string) ($claims['sub'] ?? $oauthUser->getId());
+
+                if ($sub !== '') {
+                    session()->put(EndRevokedSessions::SUB_KEY, $sub);
+                    session()->put(EndRevokedSessions::LOGIN_AT_KEY, (int) ($claims['iat'] ?? time()));
+                }
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        });
     }
 
     /**
