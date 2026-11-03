@@ -10,7 +10,7 @@ What it does:
 4. **Keeps usernames in step.** Each time someone signs in with Authentik, the panel account's username is set to their Authentik username. This fixes the placeholder name an invited person gets (like `kai3x9`) once they create their LiveNet account. Root admins are skipped, and a name that's already taken is left alone (it's written to the panel's log).
 5. **Optionally skips the login page** and goes straight to Authentik.
 6. **Sends "forgot password" to Authentik's recovery flow**, since a panel password can no longer be used to sign in.
-7. **Signs you out of Authentik too** when you sign out of the panel, and returns you to the panel's login page (which then sends you to Authentik). On sign-in it keeps your Authentik login token in a private cookie so it can do this.
+7. **Signs you out of Authentik too** when you sign out of the panel, and returns you to the panel's login page (which then sends you to Authentik). On sign-in it keeps your Authentik login token in the panel's server-side session so it can do this. (An earlier version used a cookie, which was too large and broke sign-in with a 502.)
 
 **Status:** tested on a live panel (imported as a zip through Admin → Plugins):
 

@@ -7,7 +7,7 @@ use App\Models\User;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Auth\Events\Login;
-use Illuminate\Support\Facades\Cookie;
+use Illuminate\Auth\Events\Logout;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\ServiceProvider;
@@ -19,8 +19,8 @@ use Throwable;
 
 class LiveNetAuthServiceProvider extends ServiceProvider
 {
-    /** Holds Authentik's login token (the ID token) so a sign-out can tell Authentik which login to end. */
-    private const TOKEN_COOKIE = 'ln_idt';
+    /** Session key holding Authentik's login token (the ID token), so a sign-out can tell Authentik which login to end. */
+    private const SESSION_KEY = 'livenet-auth.id-token';
 
     public function register(): void
     {
@@ -255,16 +255,18 @@ class LiveNetAuthServiceProvider extends ServiceProvider
             $url,
             (string) config('livenet-auth.logout_end_session_url'),
             (string) (config('livenet-auth.logout_return_url') ?: url('/login')),
-            self::TOKEN_COOKIE,
         ));
 
         $this->rememberLoginToken((string) config('livenet-auth.provider'));
     }
 
     /**
-     * When someone signs in with Authentik, keep the login token in a private cookie.
-     * Socialite remembers the user it fetched earlier in this request, so this does not
-     * call Authentik again. The cookie is encrypted by the panel, HttpOnly and secure.
+     * Keep Authentik's login token in the panel's session when someone signs in, and copy
+     * it into the container just before sign-out clears the session, so the logout response
+     * can use it. (A cookie would be far too large: it made the sign-in fail with a 502.)
+     *
+     * Socialite remembers the user it fetched earlier in this request, so reading the token
+     * here does not call Authentik again.
      */
     private function rememberLoginToken(string $provider): void
     {
@@ -279,10 +281,23 @@ class LiveNetAuthServiceProvider extends ServiceProvider
                 $idToken = $oauthUser->accessTokenResponseBody['id_token'] ?? null;
 
                 if (is_string($idToken) && $idToken !== '') {
-                    Cookie::queue(Cookie::make(self::TOKEN_COOKIE, $idToken, 60 * 24, '/', null, true, true, false, 'lax'));
+                    session()->put(self::SESSION_KEY, $idToken);
                 }
             } catch (Throwable $exception) {
                 // Without the token, sign-out still ends the Authentik login, just without the return trip.
+                report($exception);
+            }
+        });
+
+        // This fires while signing out, before the session is cleared.
+        Event::listen(Logout::class, function (): void {
+            try {
+                $token = session()->get(self::SESSION_KEY);
+
+                if (is_string($token) && $token !== '') {
+                    app()->instance(LogoutToAuthentik::TOKEN_KEY, $token);
+                }
+            } catch (Throwable $exception) {
                 report($exception);
             }
         });
