@@ -44,6 +44,15 @@ return [
     // which ends the Authentik login.
     'logout_url' => env('LIVENET_AUTH_LOGOUT_URL', 'https://auth.livenet.host/flows/-/default/invalidation/'),
 
+    // Authentik's end-session address for the panel's application (the slug is the part
+    // after /application/o/). With it, signing out returns you to the panel's login page.
+    // Needs the panel's address added as a "Logout" Redirect URI on the provider. Set it to
+    // an empty value to use the general logout page above instead.
+    'logout_end_session_url' => env('LIVENET_AUTH_LOGOUT_END_SESSION_URL', 'https://auth.livenet.host/application/o/pelican/end-session/'),
+
+    // Where Authentik sends people after that logout. Defaults to the panel's /login.
+    'logout_return_url' => env('LIVENET_AUTH_LOGOUT_RETURN_URL'),
+
     // Skip the login page and go straight to Authentik. Visit /login?stay to see the page anyway.
     'skip_login_page' => (bool) env('LIVENET_AUTH_SKIP_LOGIN', false),
 ];
