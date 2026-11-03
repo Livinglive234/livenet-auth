@@ -38,15 +38,14 @@ class AuthentikPasswordReset extends Notification implements ShouldQueue
             $signup = $this->signupUrl . (str_contains($this->signupUrl, '?') ? '&' : '?') . 'email=' . rawurlencode($notifiable->email);
 
             return (new MailMessage())
-                ->subject('Your LiveNet panel account now uses a LiveNet login')
-                ->greeting('Hello!')
-                ->line('The panel no longer uses passwords. You sign in with a LiveNet account instead.')
-                ->line("To keep your servers, create a LiveNet account that uses this same email address: {$notifiable->email}")
+                ->subject('Action needed: LiveNet has a new account system')
+                ->greeting('Important: our account system has changed')
+                ->line('LiveNet Server Hosting has moved to a new account system. The old panel passwords no longer work, so a password reset is not possible for your account.')
+                ->line("**To keep access to your servers, you must create a new LiveNet account using this same email address: {$notifiable->email}**")
+                ->line('**If you sign up with a different email address, you will lose access to your servers.** Your servers are matched to your new account by email address only.')
                 ->action('Create your LiveNet account', $signup)
                 ->line('After you confirm your email, sign in to the panel with the LiveNet button. Your servers will be there.')
-                ->line('Already made a LiveNet account with this email? Skip the first step and just sign in to the panel.')
-                ->line("Forgot your LiveNet password? Reset it here: {$this->recoveryUrl}")
-                ->line('Use the same email address this message was sent to, or your servers will not show up.');
+                ->line('Already created a LiveNet account with this email address? Then you do not need to do anything else. Just sign in to the panel with the LiveNet button.');
         }
 
         return (new MailMessage())
