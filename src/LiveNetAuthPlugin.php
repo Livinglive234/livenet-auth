@@ -40,8 +40,7 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         'block_passkeys' => ['LIVENET_AUTH_BLOCK_PASSKEYS', 'livenet-auth.block_passkeys', 'bool'],
         'disable_panel_2fa' => ['LIVENET_AUTH_DISABLE_PANEL_2FA', 'livenet-auth.disable_panel_2fa', 'bool'],
         'show_mfa_notice' => ['LIVENET_AUTH_SHOW_MFA_NOTICE', 'livenet-auth.show_mfa_notice', 'bool'],
-        'mfa_setup_url' => ['LIVENET_AUTH_MFA_SETUP_URL', 'livenet-auth.mfa_setup_url', 'string'],
-        'mfa_recovery_codes_url' => ['LIVENET_AUTH_MFA_RECOVERY_CODES_URL', 'livenet-auth.mfa_recovery_codes_url', 'string'],
+        'mfa_page_url' => ['LIVENET_AUTH_MFA_PAGE_URL', 'livenet-auth.mfa_page_url', 'string'],
         'reset_email_to_authentik' => ['LIVENET_AUTH_RESET_EMAIL_TO_AUTHENTIK', 'livenet-auth.reset_email_to_authentik', 'bool'],
         'logout_to_authentik' => ['LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', 'livenet-auth.logout_to_authentik', 'bool'],
         'logout_url' => ['LIVENET_AUTH_LOGOUT_URL', 'livenet-auth.logout_url', 'string'],
@@ -134,19 +133,14 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
                 ]),
 
             Section::make('Two-factor authentication')
-                ->description('Shown on every profile page once the panel\'s own 2FA is removed.')
+                ->description('Shown once the panel\'s own 2FA is removed.')
                 ->schema([
                     Toggle::make('show_mfa_notice')
-                        ->label('Show a notice that 2FA is managed by the LiveNet account'),
-                    TextInput::make('mfa_setup_url')
-                        ->label('Authenticator app setup address')
-                        ->helperText('Authentik\'s authenticator setup flow.')
-                        ->url()
-                        ->required()
-                        ->maxLength(255),
-                    TextInput::make('mfa_recovery_codes_url')
-                        ->label('Backup codes address')
-                        ->helperText('Authentik\'s recovery codes (static tokens) setup flow.')
+                        ->label('Point 2FA to the LiveNet account')
+                        ->helperText('Shows a notice on every profile page, and sends the old 2FA tab\'s address to the page below.'),
+                    TextInput::make('mfa_page_url')
+                        ->label('LiveNet account 2FA page')
+                        ->helperText('The website page where people set up an authenticator app and backup codes.')
                         ->url()
                         ->required()
                         ->maxLength(255),

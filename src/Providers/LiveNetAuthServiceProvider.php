@@ -381,8 +381,8 @@ class LiveNetAuthServiceProvider extends ServiceProvider
     }
 
     /**
-     * The panel's own 2FA is removed, so tell people where it lives now. A notice at the top
-     * of every profile page, with buttons into Authentik's setup flows.
+     * The panel's own 2FA is removed, so tell people where it lives now: a notice at the top
+     * of every profile page, and a redirect if someone opens the old 2FA tab's address.
      */
     private function showTwoFactorNotice(): void
     {
@@ -397,18 +397,18 @@ class LiveNetAuthServiceProvider extends ServiceProvider
                 return new HtmlString($marker);
             }
 
-            $setup = e((string) config('livenet-auth.mfa_setup_url'));
-            $codes = e((string) config('livenet-auth.mfa_recovery_codes_url'));
-            $button = 'display:inline-block;margin:0.25rem 0.5rem 0 0;padding:0.4rem 0.9rem;border-radius:0.5rem;'
+            $url = (string) config('livenet-auth.mfa_page_url');
+            $button = 'display:inline-block;margin-top:0.25rem;padding:0.4rem 0.9rem;border-radius:0.5rem;'
                 . 'border:1px solid currentColor;text-decoration:none;font-weight:600;';
 
             return new HtmlString(
                 $marker
+                // The old 2FA tab is gone, so send anyone who opens its address to the new page.
+                . '<script>if(/[?&]tab=2fa/.test(location.search))location.replace(' . json_encode($url, JSON_UNESCAPED_SLASHES) . ');</script>'
                 . '<div style="margin:0 0 1rem;padding:1rem 1.25rem;border-radius:0.75rem;border:1px solid rgba(128,128,128,.35)">'
                 . '<strong>Two-factor authentication is managed by your LiveNet account.</strong>'
                 . '<p style="margin:0.25rem 0 0.5rem;opacity:.8">Set it up or change it there. It protects your sign-in here and everywhere else on LiveNet.</p>'
-                . '<a href="' . $setup . '" style="' . $button . '">Set up an authenticator app</a>'
-                . '<a href="' . $codes . '" style="' . $button . '">Get backup codes</a>'
+                . '<a href="' . e($url) . '" style="' . $button . '">Manage two-factor authentication</a>'
                 . '</div>'
             );
         });
