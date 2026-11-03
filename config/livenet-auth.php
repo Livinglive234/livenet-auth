@@ -29,6 +29,14 @@ return [
     // Where "Create your LiveNet account" in that email goes (Authentik's signup flow).
     'signup_url' => env('LIVENET_AUTH_SIGNUP_URL', 'https://auth.livenet.host/if/flow/default-enrollment-flow/'),
 
+    // Send the panel's "forgot password" page to Authentik's recovery flow, since a panel
+    // password can no longer be used to sign in.
+    'redirect_password_reset' => (bool) env('LIVENET_AUTH_REDIRECT_PASSWORD_RESET', true),
+
+    // Authentik's password recovery flow. Click "Forgot password?" on Authentik's login page
+    // and copy the address if this guess is wrong.
+    'recovery_url' => env('LIVENET_AUTH_RECOVERY_URL', 'https://auth.livenet.host/if/flow/default-recovery-flow/'),
+
     // Skip the login page and go straight to Authentik. Visit /login?stay to see the page anyway.
     'skip_login_page' => (bool) env('LIVENET_AUTH_SKIP_LOGIN', false),
 ];

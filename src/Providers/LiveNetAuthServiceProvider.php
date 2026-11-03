@@ -49,6 +49,10 @@ class LiveNetAuthServiceProvider extends ServiceProvider
         if (config('livenet-auth.skip_login_page')) {
             $this->skipLoginPage($provider);
         }
+
+        if (config('livenet-auth.redirect_password_reset')) {
+            $this->redirectPasswordReset();
+        }
     }
 
     /**
@@ -191,6 +195,32 @@ class LiveNetAuthServiceProvider extends ServiceProvider
                 . 'document.cookie="ln_skip=1; Max-Age=60; Path=/; SameSite=Lax";'
                 . 'location.replace(' . $target . ');'
                 . '})();</script>'
+            );
+        });
+    }
+
+    /**
+     * The panel's own "forgot password" page only sets a panel password, which can no longer
+     * be used to sign in. Send people to Authentik's recovery flow instead.
+     */
+    private function redirectPasswordReset(): void
+    {
+        FilamentView::registerRenderHook(PanelsRenderHook::BODY_START, function (): HtmlString {
+            $route = (string) (request()->route()?->getName() ?? 'none');
+            $matches = Str::is('filament.*.auth.password-reset.request', $route);
+
+            $marker = '<!-- livenet-auth recovery: route=' . e($route) . ' match=' . ($matches ? 'yes' : 'no') . ' -->';
+
+            if (!$matches) {
+                return new HtmlString($marker);
+            }
+
+            $url = (string) config('livenet-auth.recovery_url');
+
+            return new HtmlString(
+                $marker
+                . '<script>location.replace(' . json_encode($url, JSON_UNESCAPED_SLASHES) . ');</script>'
+                . '<noscript><p style="text-align:center;margin:2rem"><a href="' . e($url) . '">Reset your password with your LiveNet account</a></p></noscript>'
             );
         });
     }
