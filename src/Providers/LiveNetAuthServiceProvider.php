@@ -18,6 +18,7 @@ use Laravel\Socialite\Facades\Socialite;
 use LiveNet\LiveNetAuth\Console\ReconcileUsers;
 use LiveNet\LiveNetAuth\Http\Middleware\BlockPasskeys;
 use LiveNet\LiveNetAuth\Http\Responses\LogoutToAuthentik;
+use LiveNet\LiveNetAuth\Http\Responses\LogoutToLoginPage;
 use LiveNet\LiveNetAuth\Notifications\AuthentikPasswordReset;
 use LiveNet\LiveNetAuth\Notifications\InvitedToServer;
 use Throwable;
@@ -97,9 +98,7 @@ class LiveNetAuthServiceProvider extends ServiceProvider
             $this->replaceResetEmail();
         }
 
-        if (config('livenet-auth.logout_to_authentik')) {
-            $this->logoutToAuthentik();
-        }
+        $this->replaceLogoutResponse();
     }
 
     /**
@@ -273,16 +272,33 @@ class LiveNetAuthServiceProvider extends ServiceProvider
     }
 
     /**
-     * After the panel signs someone out, send them to Authentik's logout so the Authentik
-     * login ends too. Filament asks the container for its "logout response", so we replace
-     * it. If a Filament update renames that class, we do nothing instead of breaking sign-out.
+     * Choose what happens right after the panel signs someone out. Filament asks the container for
+     * its "logout response", so we replace it. If a Filament update renames that class, we do
+     * nothing instead of breaking sign-out.
+     *
+     * - logout_to_authentik on: end the Authentik login too, then return to the panel's login page.
+     * - otherwise, logout_show_login_page on: show the panel's login screen (login-skip paused).
+     * - otherwise: leave Pelican's own behavior alone.
      */
-    private function logoutToAuthentik(): void
+    private function replaceLogoutResponse(): void
     {
+        $toAuthentik = (bool) config('livenet-auth.logout_to_authentik');
+        $toLoginPage = (bool) config('livenet-auth.logout_show_login_page');
+
+        if (!$toAuthentik && !$toLoginPage) {
+            return;
+        }
+
         $contract = 'Filament\\Auth\\Http\\Responses\\Contracts\\LogoutResponse';
 
         if (!interface_exists($contract)) {
             report(new \RuntimeException("LiveNet Auth: {$contract} was not found, so sign-out was left alone."));
+
+            return;
+        }
+
+        if (!$toAuthentik) {
+            $this->app->bind($contract, fn () => new LogoutToLoginPage());
 
             return;
         }

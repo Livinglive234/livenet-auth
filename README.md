@@ -14,7 +14,7 @@ What it does:
 8. **Sends the panel's 2FA tab to the LiveNet account.** The tab stays exactly as Pelican draws it, and clicking it (or opening the old `?tab=2fa` address) goes to the website's 2FA page. It forces `APP_2FA_REQUIRED` to 0 so nobody is locked out. You can instead remove the tab entirely and show a plain button.
 9. **Cleans up deleted accounts.** Once a day it removes panel accounts whose Authentik account no longer exists (read-only token, reports first, never touches admins or accounts that own servers).
 10. **Replaces the panel's password reset email** (including the admin Users page's "Reset password" button). Someone already linked to a LiveNet login gets a link to Authentik's recovery flow. Someone who used the panel before LiveNet logins existed gets an email telling them to create a LiveNet account with the same email address, so their servers are matched to them.
-11. **Signs you out of Authentik too** when you sign out of the panel, and returns you to the panel's login page (which then sends you to Authentik). On sign-in it keeps your Authentik login token in the panel's server-side session so it can do this. (An earlier version used a cookie, which was too large and broke sign-in with a 502.)
+11. **Controls where panel sign-out lands.** By default it shows the panel's normal login screen (with the login-skip paused so you can see it). Your Authentik login stays active. Optionally it can also end the Authentik login and return to the panel's login page, which takes a trip through Authentik.
 
 **Status:** tested on a live panel (imported as a zip through Admin → Plugins):
 
@@ -25,7 +25,8 @@ What it does:
 | Subuser invite email | works |
 | Skip the login page | works |
 | Forgot-password redirect | **untested** |
-| Sign out also ends the Authentik login, then returns to the panel's login | works (v1.4.1) |
+| Sign out also ends the Authentik login, then returns to the panel's login (off by default) | works (v1.4.1) |
+| Sign out shows the panel's login screen | **untested** |
 | Settings page | **untested** |
 | Replaced reset email (both wordings) | **untested** |
 | Daily cleanup of deleted accounts | **untested** |
@@ -91,7 +92,8 @@ Status: **untested** (written without PHP available).
 | `LIVENET_AUTH_AUTHENTIK_URL` | `https://auth.livenet.host` | Where Authentik is. |
 | `LIVENET_AUTH_AUTHENTIK_API_TOKEN` | empty | Read-only Authentik token (a secret). |
 | `LIVENET_AUTH_RESET_EMAIL_TO_AUTHENTIK` | `true` | Replace Pelican's reset email with one linking to Authentik's recovery flow. |
-| `LIVENET_AUTH_LOGOUT_TO_AUTHENTIK` | `true` | Panel sign-out also ends the Authentik login. |
+| `LIVENET_AUTH_LOGOUT_SHOW_LOGIN_PAGE` | `true` | After sign-out, show the panel's login screen (Authentik login stays active). |
+| `LIVENET_AUTH_LOGOUT_TO_AUTHENTIK` | `false` | Panel sign-out also ends the Authentik login. |
 | `LIVENET_AUTH_LOGOUT_URL` | `https://auth.livenet.host/flows/-/default/invalidation/` | Where to go after panel sign-out. |
 | `LIVENET_AUTH_LOGOUT_END_SESSION_URL` | `https://auth.livenet.host/application/o/pelican/end-session/` | The panel app's end-session address in Authentik (check the slug). Empty uses the general logout page only. |
 | `LIVENET_AUTH_LOGOUT_RETURN_URL` | the panel's `/login` | Where Authentik sends people after logout. Must be a "Logout" Redirect URI on the provider. |

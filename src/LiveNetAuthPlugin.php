@@ -42,6 +42,7 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         'show_mfa_notice' => ['LIVENET_AUTH_SHOW_MFA_NOTICE', 'livenet-auth.show_mfa_notice', 'bool'],
         'mfa_page_url' => ['LIVENET_AUTH_MFA_PAGE_URL', 'livenet-auth.mfa_page_url', 'string'],
         'reset_email_to_authentik' => ['LIVENET_AUTH_RESET_EMAIL_TO_AUTHENTIK', 'livenet-auth.reset_email_to_authentik', 'bool'],
+        'logout_show_login_page' => ['LIVENET_AUTH_LOGOUT_SHOW_LOGIN_PAGE', 'livenet-auth.logout_show_login_page', 'bool'],
         'logout_to_authentik' => ['LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', 'livenet-auth.logout_to_authentik', 'bool'],
         'logout_url' => ['LIVENET_AUTH_LOGOUT_URL', 'livenet-auth.logout_url', 'string'],
         'logout_end_session_url' => ['LIVENET_AUTH_LOGOUT_END_SESSION_URL', 'livenet-auth.logout_end_session_url', 'string'],
@@ -211,8 +212,12 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
                     Toggle::make('reset_email_to_authentik')
                         ->label('Replace the panel\'s password reset email')
                         ->helperText('Includes the admin Users page\'s "Reset password" button. The email links to Authentik\'s recovery flow instead.'),
+                    Toggle::make('logout_show_login_page')
+                        ->label('After sign-out, show the panel\'s login screen')
+                        ->helperText('Your Authentik login stays active, so the LiveNet button signs you straight back in. Used when the next toggle is off.'),
                     Toggle::make('logout_to_authentik')
-                        ->label('Signing out also ends the Authentik login'),
+                        ->label('Signing out also ends the Authentik login')
+                        ->helperText('Takes a trip through Authentik, which can feel glitchy. Off by default.'),
                     TextInput::make('logout_url')
                         ->label('General logout address')
                         ->helperText('Authentik\'s own logout. Used when the login token is not available.')

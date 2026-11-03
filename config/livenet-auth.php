@@ -61,8 +61,14 @@ return [
     // "Reset password" button) with one that links to Authentik's recovery flow.
     'reset_email_to_authentik' => (bool) env('LIVENET_AUTH_RESET_EMAIL_TO_AUTHENTIK', true),
 
-    // Signing out of the panel also signs you out of Authentik.
-    'logout_to_authentik' => (bool) env('LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', true),
+    // Signing out of the panel also ends the Authentik login, then returns to the panel's login page.
+    // Off by default: with this on, sign-out takes a trip through Authentik that can feel glitchy.
+    'logout_to_authentik' => (bool) env('LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', false),
+
+    // When the setting above is off, sign out lands on the panel's normal login screen (with the
+    // login-skip paused so you can see it). Your Authentik login stays active, so the LiveNet
+    // button signs you straight back in. Turn this off to use Pelican's own sign-out redirect.
+    'logout_show_login_page' => (bool) env('LIVENET_AUTH_LOGOUT_SHOW_LOGIN_PAGE', true),
 
     // Where to go after the panel signs someone out. This is Authentik's own logout flow,
     // which ends the Authentik login.
