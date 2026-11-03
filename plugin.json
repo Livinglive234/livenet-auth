@@ -1,0 +1,13 @@
+{
+    "id": "livenet-auth",
+    "name": "LiveNet Auth",
+    "author": "LiveNet",
+    "version": "1.0.0",
+    "description": "Makes Authentik the one login for the panel: keeps the Authentik link in place, locks synced accounts, and tells subuser invitees how to get a LiveNet account.",
+    "category": "plugin",
+    "url": "https://github.com/Livinglive234/livenet-auth",
+    "namespace": "LiveNet\\LiveNetAuth",
+    "class": "LiveNetAuthPlugin",
+    "panels": null,
+    "api_version": 1
+}
