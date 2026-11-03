@@ -46,6 +46,7 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         'logout_show_login_page' => ['LIVENET_AUTH_LOGOUT_SHOW_LOGIN_PAGE', 'livenet-auth.logout_show_login_page', 'bool'],
         'logout_to_authentik' => ['LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', 'livenet-auth.logout_to_authentik', 'bool'],
         'backchannel_logout' => ['LIVENET_AUTH_BACKCHANNEL_LOGOUT', 'livenet-auth.backchannel_logout', 'bool'],
+        'sftp_password' => ['LIVENET_AUTH_SFTP_PASSWORD', 'livenet-auth.sftp_password', 'bool'],
         'back_to_site' => ['LIVENET_AUTH_BACK_TO_SITE', 'livenet-auth.back_to_site', 'bool'],
         'back_to_site_url' => ['LIVENET_AUTH_BACK_TO_SITE_URL', 'livenet-auth.back_to_site_url', 'string'],
         'logout_url' => ['LIVENET_AUTH_LOGOUT_URL', 'livenet-auth.logout_url', 'string'],
@@ -230,6 +231,9 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
                     Toggle::make('logout_to_authentik')
                         ->label('Signing out also ends the Authentik login')
                         ->helperText('Then returns to the panel\'s login screen. Needs the return address below added as a "Logout" Redirect URI on the panel\'s provider in Authentik.'),
+                    Toggle::make('sftp_password')
+                        ->label('SFTP buttons open a popup, with a separate SFTP password')
+                        ->helperText('People choose an SFTP password the first time they click an SFTP button. Takes effect after the page reloads.'),
                     Toggle::make('back_to_site')
                         ->label('Show a "Back to livenet.host" button on the login page')
                         ->helperText('Appears under the login form. Takes effect after the page reloads.'),

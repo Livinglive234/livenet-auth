@@ -2,8 +2,14 @@
 
 namespace LiveNet\LiveNetAuth\Providers;
 
+use App\Enums\TablerIcon;
 use App\Events\Server\SubUserAdded;
+use App\Filament\Components\Actions\ConnectSftpAction;
 use App\Models\User;
+use Filament\Actions\Action;
+use Filament\Facades\Filament;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Auth\Events\Login;
@@ -24,6 +30,7 @@ use LiveNet\LiveNetAuth\Http\Responses\LogoutToAuthentik;
 use LiveNet\LiveNetAuth\Http\Responses\LogoutToLoginPage;
 use LiveNet\LiveNetAuth\Notifications\AuthentikPasswordReset;
 use LiveNet\LiveNetAuth\Notifications\InvitedToServer;
+use LiveNet\LiveNetAuth\Support\SftpPassword;
 use Throwable;
 
 class LiveNetAuthServiceProvider extends ServiceProvider
@@ -103,6 +110,10 @@ class LiveNetAuthServiceProvider extends ServiceProvider
 
         $this->replaceLogoutResponse();
 
+        if (config('livenet-auth.sftp_password')) {
+            $this->replaceSftpButtons();
+        }
+
         if (config('livenet-auth.back_to_site')) {
             $this->addBackToSiteButton();
         }
@@ -114,6 +125,90 @@ class LiveNetAuthServiceProvider extends ServiceProvider
             Route::post('/livenet-auth/backchannel-logout', BackchannelLogout::class)
                 ->middleware('throttle:30,1')
                 ->name('livenet-auth.backchannel-logout');
+        }
+    }
+
+    /**
+     * Every SFTP button in the panel (the files page and each server's settings page) is a
+     * ConnectSftpAction. Turn it into a popup styled like the delete confirmation, in the same
+     * green: it asks for an SFTP password first if there is none, and otherwise offers
+     * "Connect to SFTP", "Change SFTP password" and "Cancel".
+     */
+    private function replaceSftpButtons(): void
+    {
+        $min = max(8, (int) config('livenet-auth.sftp_password_min_length'));
+
+        $fields = fn (): array => [
+            TextInput::make('sftp_password')
+                ->label('SFTP password')
+                ->helperText('Only used for SFTP. It is separate from your LiveNet password.')
+                ->password()
+                ->revealable()
+                ->required()
+                ->minLength($min)
+                ->maxLength(128)
+                ->autocomplete('new-password')
+                ->confirmed(),
+            TextInput::make('sftp_password_confirmation')
+                ->label('Repeat the SFTP password')
+                ->password()
+                ->revealable()
+                ->required()
+                ->autocomplete('new-password'),
+        ];
+
+        $save = function (array $data): void {
+            SftpPassword::set(user(), (string) $data['sftp_password']);
+
+            Notification::make()->title('SFTP password saved')->success()->send();
+        };
+
+        ConnectSftpAction::configureUsing(function (ConnectSftpAction $action) use ($fields, $save, $min): void {
+            $url = fn (): ?string => Filament::getTenant()?->getSftpUrl($action->getUsername(), $action->getDirectory());
+
+            $action
+                ->url(null)
+                ->color('success')
+                ->requiresConfirmation()
+                ->modalIconColor('success')
+                ->modalHeading(fn (): string => SftpPassword::isSet(user()) ? 'Connect to SFTP' : 'Set an SFTP password')
+                ->modalDescription(fn (): string => SftpPassword::isSet(user())
+                    ? 'Your SFTP client will ask for your SFTP password.'
+                    : "SFTP can't use your LiveNet password. Choose a separate SFTP password (at least {$min} characters) to connect.")
+                ->modalSubmitActionLabel('Save password')
+                ->modalSubmitAction(fn () => SftpPassword::isSet(user()) ? false : null)
+                ->schema(fn (): array => SftpPassword::isSet(user()) ? [] : $fields())
+                ->action(function (array $data) use ($save): void {
+                    if (!SftpPassword::isSet(user()) && isset($data['sftp_password'])) {
+                        $save($data);
+                    }
+                })
+                ->extraModalFooterActions(fn (): array => SftpPassword::isSet(user()) ? [
+                    Action::make('livenet_connect_sftp')
+                        ->label('Connect to SFTP')
+                        ->icon(TablerIcon::Plug)
+                        ->color('success')
+                        ->url($url),
+                    Action::make('livenet_change_sftp_password')
+                        ->label('Change SFTP password')
+                        ->color('gray')
+                        ->modalHeading('Change SFTP password')
+                        ->modalWidth('md')
+                        ->schema($fields())
+                        ->action($save)
+                        ->cancelParentActions(),
+                ] : []);
+        });
+
+        // The settings page says the SFTP password is the panel password. It no longer is.
+        try {
+            $translator = $this->app['translator'];
+            $translator->get('server/setting.server_info.sftp.password_body');
+            $translator->addLines([
+                'server/setting.server_info.sftp.password_body' => 'Use the Connect to SFTP button to set or change your SFTP password. It is separate from your LiveNet password.',
+            ], 'en');
+        } catch (Throwable $exception) {
+            report($exception);
         }
     }
 

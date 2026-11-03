@@ -96,6 +96,11 @@ return [
     'backchannel_client_id' => env('LIVENET_AUTH_BACKCHANNEL_CLIENT_ID', ''),
     'backchannel_client_secret' => env('LIVENET_AUTH_BACKCHANNEL_CLIENT_SECRET', ''),
 
+    // The SFTP buttons open a popup (set or change an SFTP password, or connect) instead of going straight
+    // to the SFTP client, and people choose their own SFTP password, since they no longer have a panel one.
+    'sftp_password' => (bool) env('LIVENET_AUTH_SFTP_PASSWORD', true),
+    'sftp_password_min_length' => (int) env('LIVENET_AUTH_SFTP_PASSWORD_MIN', 12),
+
     // A "Back to livenet.host" button under the panel's login form.
     'back_to_site' => (bool) env('LIVENET_AUTH_BACK_TO_SITE', true),
     'back_to_site_url' => env('LIVENET_AUTH_BACK_TO_SITE_URL', 'https://livenet.host/'),
