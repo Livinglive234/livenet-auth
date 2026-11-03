@@ -20,7 +20,7 @@ What it does:
 | Username sync | untested. It relies on Socialite remembering the user fetched earlier in the same request. |
 | Skip the login page | untested |
 
-Also, There was no PHP available where it was written, so run the lint step below before enabling it.
+There was no PHP available where it was written, so run the lint step below before enabling it.
 
 ## Install
 
