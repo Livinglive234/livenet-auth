@@ -10,6 +10,7 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use LiveNet\LiveNetAuth\Notifications\InvitedToServer;
 use Throwable;
@@ -171,14 +172,21 @@ class LiveNetAuthServiceProvider extends ServiceProvider
     private function skipLoginPage(string $provider): void
     {
         FilamentView::registerRenderHook(PanelsRenderHook::BODY_START, function () use ($provider): HtmlString {
-            if (!request()->routeIs('filament.*.auth.login')) {
-                return new HtmlString('');
+            $route = (string) (request()->route()?->getName() ?? 'none');
+            $isLogin = Str::is('filament.*.auth.login', $route);
+
+            // A harmless marker, so "view source" shows whether this hook ran and what it saw.
+            $marker = '<!-- livenet-auth skip-login: route=' . e($route) . ' login=' . ($isLogin ? 'yes' : 'no') . ' -->';
+
+            if (!$isLogin) {
+                return new HtmlString($marker);
             }
 
             $target = json_encode(route('auth.oauth.redirect', ['driver' => $provider], false), JSON_UNESCAPED_SLASHES);
 
             return new HtmlString(
-                '<script>(function(){'
+                $marker
+                . '<script>(function(){'
                 . 'if(location.search.indexOf("stay")>-1||/(?:^|; )ln_skip=1/.test(document.cookie))return;'
                 . 'document.cookie="ln_skip=1; Max-Age=60; Path=/; SameSite=Lax";'
                 . 'location.replace(' . $target . ');'
