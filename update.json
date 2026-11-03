@@ -1,7 +1,7 @@
 {
   "*": {
-    "version": "1.9.1",
-    "download_url": "https://github.com/Livinglive234/livenet-auth/releases/download/v1.9.1/livenet-auth.zip",
-    "sha256": "4f31d64ee8dc061f7de428cdb673f081a5017a98850de340257a9774d22ca832"
+    "version": "1.10.0",
+    "download_url": "https://github.com/Livinglive234/livenet-auth/releases/download/v1.10.0/livenet-auth.zip",
+    "sha256": "4966e861b9f5d8df7fb207af03537a457988530c3ecd526f7639ab61428f77e7"
   }
 }
