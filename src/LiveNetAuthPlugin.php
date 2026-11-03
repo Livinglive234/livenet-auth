@@ -60,10 +60,10 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
 
     public function register(Panel $panel): void
     {
-        // Authentik handles sign-in now, so drop the panel's own two-factor options. They are
-        // only ever asked for after a password sign-in, which is turned off. This also removes
-        // the 2FA tab on the profile page. A failure here must never break the panel.
-        if (config('livenet-auth.disable_panel_2fa', env('LIVENET_AUTH_DISABLE_PANEL_2FA', true))) {
+        // Optional: drop the panel's own two-factor options, which also removes the 2FA tab on the
+        // profile page. Off by default, because the tab is kept and redirected instead. A failure
+        // here must never break the panel.
+        if (config('livenet-auth.disable_panel_2fa', env('LIVENET_AUTH_DISABLE_PANEL_2FA', false))) {
             try {
                 $panel->multiFactorAuthentication([]);
             } catch (\Throwable $exception) {
@@ -128,16 +128,16 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
                         ->label('Also block passkey sign-in completely')
                         ->helperText('Makes the passkey routes return "not found", so passkeys cannot be used at all. A passkey would skip Authentik.'),
                     Toggle::make('disable_panel_2fa')
-                        ->label('Remove the panel\'s own 2FA')
-                        ->helperText('Removes the authenticator-app and email-code options and the 2FA tab, and forces "require 2FA" off so nobody gets locked out. Takes effect after the page reloads.'),
+                        ->label('Remove the 2FA tab entirely')
+                        ->helperText('Off by default: the tab stays and its click goes to the LiveNet account\'s 2FA page. Turn this on to remove the tab (and the panel\'s own 2FA options), and show a plain button instead. Takes effect after the page reloads.'),
                 ]),
 
             Section::make('Two-factor authentication')
                 ->description('Shown once the panel\'s own 2FA is removed.')
                 ->schema([
                     Toggle::make('show_mfa_notice')
-                        ->label('Point 2FA to the LiveNet account')
-                        ->helperText('Shows one "Two-factor authentication" button on every profile page, and sends the old 2FA tab\'s address to the page below.'),
+                        ->label('Send the 2FA tab to the LiveNet account')
+                        ->helperText('Clicking the profile page\'s 2FA tab goes to the page below, and so does the old 2FA tab address. Also forces the panel\'s "require 2FA" setting off.'),
                     TextInput::make('mfa_page_url')
                         ->label('LiveNet account 2FA page')
                         ->helperText('The website page where people set up an authenticator app and backup codes.')

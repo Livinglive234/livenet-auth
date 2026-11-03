@@ -45,14 +45,15 @@ return [
     // Also block the passkey routes completely (404), so passkeys cannot be used at all.
     'block_passkeys' => (bool) env('LIVENET_AUTH_BLOCK_PASSKEYS', false),
 
-    // Remove the panel's own two-factor options (authenticator app and email codes), since
-    // Authentik handles sign-in now. This also forces APP_2FA_REQUIRED to 0, because requiring
-    // 2FA with no way to set it up would lock people out.
-    'disable_panel_2fa' => (bool) env('LIVENET_AUTH_DISABLE_PANEL_2FA', true),
+    // Remove the panel's own two-factor options (authenticator app and email codes) and the 2FA tab
+    // with them. Off by default: the tab is kept and its click is sent to the LiveNet account's 2FA
+    // page instead, so it looks like every other tab. Turn this on to remove the tab, and a plain
+    // button is shown in its place.
+    'disable_panel_2fa' => (bool) env('LIVENET_AUTH_DISABLE_PANEL_2FA', false),
 
-    // The panel's own 2FA is removed, so point people at the LiveNet account's 2FA page instead:
-    // a notice on every profile page, and a redirect if someone opens the old 2FA tab's address
-    // (for example from the "you must enable 2FA" banner).
+    // Send the panel's 2FA tab (and its old address, ?tab=2fa, for example from the "you must enable
+    // 2FA" banner) to the LiveNet account's 2FA page. This also forces the panel's "require 2FA"
+    // setting to 0, because requiring 2FA that can't be set up here would lock people out.
     'show_mfa_notice' => (bool) env('LIVENET_AUTH_SHOW_MFA_NOTICE', true),
     'mfa_page_url' => env('LIVENET_AUTH_MFA_PAGE_URL', 'https://livenet.host/account/2fa'),
 

@@ -70,9 +70,9 @@ class LiveNetAuthServiceProvider extends ServiceProvider
             $this->app['router']->pushMiddlewareToGroup('web', BlockPasskeys::class);
         }
 
-        if (config('livenet-auth.disable_panel_2fa')) {
-            // The panel's "require 2FA" setting would send people to a settings tab that no
-            // longer exists, so make sure it is off (the plugin removes the tab).
+        if (config('livenet-auth.disable_panel_2fa') || config('livenet-auth.show_mfa_notice')) {
+            // The panel's "require 2FA" setting would send people to a tab that can no longer be
+            // used to set 2FA up here, so make sure it is off.
             config(['panel.auth.2fa_required' => 0]);
         }
 
@@ -381,8 +381,11 @@ class LiveNetAuthServiceProvider extends ServiceProvider
     }
 
     /**
-     * The panel's own 2FA is removed, so give the profile page a single button to the LiveNet
-     * account's 2FA page, and redirect anyone who opens the old 2FA tab's address there.
+     * Send the profile page's 2FA tab to the LiveNet account's 2FA page.
+     *
+     * Normally the tab stays exactly as Pelican draws it, and a click on it is taken over and
+     * redirected. If the tab was removed (LIVENET_AUTH_DISABLE_PANEL_2FA), a plain button is
+     * shown instead. The old tab address (?tab=2fa) is redirected either way.
      */
     private function showTwoFactorNotice(): void
     {
@@ -398,15 +401,34 @@ class LiveNetAuthServiceProvider extends ServiceProvider
             }
 
             $url = (string) config('livenet-auth.mfa_page_url');
-            $button = 'display:inline-block;padding:0.4rem 0.9rem;border-radius:0.5rem;'
-                . 'border:1px solid currentColor;text-decoration:none;font-weight:600;';
+            $target = json_encode($url, JSON_UNESCAPED_SLASHES);
 
-            return new HtmlString(
-                $marker
-                // The old 2FA tab is gone, so send anyone who opens its address to the new page.
-                . '<script>if(/[?&]tab=2fa/.test(location.search))location.replace(' . json_encode($url, JSON_UNESCAPED_SLASHES) . ');</script>'
-                . '<div style="margin:0 0 1rem"><a href="' . e($url) . '" style="' . $button . '">Two-factor authentication</a></div>'
-            );
+            // Anyone who opens the old 2FA tab's address goes to the new page.
+            $redirect = '<script>if(/[?&]tab=2fa/.test(location.search))location.replace(' . $target . ');</script>';
+
+            if (config('livenet-auth.disable_panel_2fa')) {
+                // The tab is gone, so show a plain button in its place.
+                $button = 'display:inline-block;padding:0.4rem 0.9rem;border-radius:0.5rem;'
+                    . 'border:1px solid currentColor;text-decoration:none;font-weight:600;';
+
+                return new HtmlString(
+                    $marker . $redirect
+                    . '<div style="margin:0 0 1rem"><a href="' . e($url) . '" style="' . $button . '">Two-factor authentication</a></div>'
+                );
+            }
+
+            // The tab is kept. Catch clicks on it before Pelican's tab code does, and go to the
+            // new page instead. The tab is found by its click handler or, failing that, by its label.
+            $takeover = '<script>(function(u){'
+                . 'if(window.__lnTab2fa)return;window.__lnTab2fa=true;'
+                . 'function find(el){var t=el.closest&&el.closest("[role=tab],button");if(!t)return null;'
+                . 'if((t.getAttribute("x-on:click")||"").indexOf("2fa::data::tab")>-1)return t;'
+                . 'if(t.getAttribute("role")==="tab"&&/^\\s*(2fa|two[- ]?factor)/i.test(t.textContent||""))return t;return null;}'
+                . 'document.addEventListener("click",function(e){if(!find(e.target))return;'
+                . 'e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();location.href=u;},true);'
+                . '})(' . $target . ');</script>';
+
+            return new HtmlString($marker . $redirect . $takeover);
         });
     }
 
