@@ -22,6 +22,7 @@ What it does:
 | Skip the login page | works |
 | Forgot-password redirect | **untested** |
 | Sign out also ends the Authentik login, then returns to the panel's login | **untested** |
+| Settings page | **untested** |
 | Username sync | **untested**. It relies on Socialite remembering the user fetched earlier in the same request. |
 
 It was written without PHP available, so run the lint step below before enabling it. Install it by importing the zip in Admin → Plugins; copying the folder by hand did not work reliably.
@@ -40,6 +41,12 @@ It was written without PHP available, so run the lint step below before enabling
    ```bash
    cd /var/www/pelican && sudo -u www-data php artisan optimize:clear
    ```
+
+## Settings page
+
+Admin → Plugins → LiveNet Auth → Settings has a toggle or field for everything below, and for Pelican's own related settings (password login, the two email notifications). Saving writes to the panel's `.env` and clears the config cache, so changes apply straight away. You can still edit `.env` by hand if you prefer.
+
+Status: **untested** (written without PHP available).
 
 ## Settings (all optional, in `.env`)
 
