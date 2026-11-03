@@ -21,7 +21,7 @@ What it does:
 | Subuser invite email | works |
 | Skip the login page | works |
 | Forgot-password redirect | **untested** |
-| Sign out also ends the Authentik login, then returns to the panel's login | **untested** |
+| Sign out also ends the Authentik login, then returns to the panel's login | works (v1.4.1) |
 | Settings page | **untested** |
 | Username sync | **untested**. It relies on Socialite remembering the user fetched earlier in the same request. |
 
