@@ -2,8 +2,8 @@
 
 namespace LiveNet\LiveNetAuth\Filament\Pages;
 
-use App\Models\User;
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\EmbeddedTable;
@@ -12,21 +12,26 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use LiveNet\LiveNetAuth\Support\Orphans;
 use Throwable;
 
 /**
- * Admin page listing panel accounts whose LiveNet (Authentik) account no longer exists, with a button to
- * delete each one. It checks Authentik when the page opens (and when "Check Authentik now" is pressed),
- * and only root admins can see it. Accounts that own servers are listed but cannot be deleted here.
+ * Admin page listing panel accounts whose LiveNet (Authentik) account no longer exists. Each row links to
+ * the user's page and has a Delete button; rows can be ticked and deleted together. It checks Authentik when
+ * the page opens (and on Refresh), and only root admins can see it. Accounts that own servers are listed
+ * but cannot be selected or deleted here.
  */
 class OrphanedAccounts extends Page implements HasTable
 {
     use InteractsWithTable;
 
     private const CACHE_KEY = 'livenet-auth.orphans';
+
+    /** How many orphans there were at the last check, for the menu badge (-1: the check failed). */
+    private const COUNT_KEY = 'livenet-auth.orphans.count';
 
     /** Why the last check failed, shown instead of the list. */
     public ?string $problem = null;
@@ -46,43 +51,59 @@ class OrphanedAccounts extends Page implements HasTable
         return 'Orphaned accounts';
     }
 
-    /** Sits in the same menu group as Pelican's own Users page, right after it. */
+    /** Sits in the same menu group as Pelican's own Users page. */
     public static function getNavigationGroup(): ?string
     {
-        $users = self::usersResource();
+        $group = self::fromResources('getNavigationGroup', fn ($value): bool => is_string($value) && $value !== '');
 
-        try {
-            $group = $users ? $users::getNavigationGroup() : null;
-        } catch (Throwable) {
-            $group = null;
-        }
-
-        return is_string($group) && $group !== '' ? $group : 'User';
+        return is_string($group) ? $group : 'User';
     }
 
+    /** Last in that group: after the Users and Roles pages. */
     public static function getNavigationSort(): ?int
     {
-        $users = self::usersResource();
-
-        try {
-            $sort = $users ? $users::getNavigationSort() : null;
-        } catch (Throwable) {
-            $sort = null;
-        }
-
-        return is_int($sort) ? $sort + 1 : null;
-    }
-
-    /** @return class-string|null */
-    private static function usersResource(): ?string
-    {
-        foreach (['App\\Filament\\Admin\\Resources\\Users\\UserResource', 'App\\Filament\\Admin\\Resources\\UserResource'] as $class) {
-            if (class_exists($class)) {
-                return $class;
+        $sorts = [];
+        foreach (self::resources() as $resource) {
+            try {
+                $sort = $resource::getNavigationSort();
+            } catch (Throwable) {
+                $sort = null;
+            }
+            if (is_int($sort)) {
+                $sorts[] = $sort;
             }
         }
 
-        return null;
+        return ($sorts ? max($sorts) : 99) + 1;
+    }
+
+    /**
+     * The count shown on the menu tab, like the other admin pages have. It comes from the last check and is
+     * kept for ten minutes, so opening admin pages never waits on Authentik every time.
+     */
+    public static function getNavigationBadge(): ?string
+    {
+        try {
+            $count = Cache::get(self::COUNT_KEY);
+
+            if ($count === null) {
+                try {
+                    $count = count(Orphans::scan());
+                } catch (Throwable) {
+                    $count = -1;
+                }
+                Cache::put(self::COUNT_KEY, $count, $count < 0 ? 300 : 600);
+            }
+        } catch (Throwable) {
+            return null;
+        }
+
+        return $count >= 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return (int) Cache::get(self::COUNT_KEY, 0) > 0 ? 'warning' : 'gray';
     }
 
     public static function getNavigationIcon(): ?string
@@ -100,24 +121,39 @@ class OrphanedAccounts extends Page implements HasTable
         return $table
             ->records(fn (): array => $this->rows())
             ->columns([
-                TextColumn::make('username')->label('Username'),
+                TextColumn::make('username')
+                    ->label('Username')
+                    ->color('primary')
+                    ->url(fn (array $record): string => $this->userUrl((int) $record['id'])),
                 TextColumn::make('email')->label('Email'),
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
                     ->color(fn (string $state): string => $state === 'Owns servers' ? 'warning' : 'danger'),
             ])
-            // In the table's toolbar (top right, where a search box would be), like a refresh button should be.
+            // In the table's toolbar (top right, where a search box would be).
             ->headerActions([
                 Action::make('refresh')
                     ->label('Refresh')
                     ->icon('tabler-refresh')
-                    ->color('gray')
+                    ->color('primary')
                     ->action(function (): void {
-                        Cache::forget(self::CACHE_KEY);
+                        $this->forgetChecks();
                         $this->resetTable();
                     }),
             ])
+            // Top left of the toolbar, once rows are ticked.
+            ->toolbarActions([
+                BulkAction::make('delete_selected')
+                    ->label('Delete selected')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Delete the selected accounts?')
+                    ->modalDescription('Their LiveNet accounts no longer exist, so nobody can sign in to them. Each one is checked with Authentik again before it is deleted.')
+                    ->deselectRecordsAfterCompletion()
+                    ->action(fn (Collection $records) => $this->deleteAccounts($records->pluck('id')->map(fn ($id): int => (int) $id)->all())),
+            ])
+            ->checkIfRecordIsSelectableUsing(fn (array $record): bool => !$record['owns'])
             ->recordActions([
                 Action::make('delete')
                     ->label('Delete')
@@ -126,7 +162,7 @@ class OrphanedAccounts extends Page implements HasTable
                     ->modalHeading('Delete this panel account?')
                     ->modalDescription('Its LiveNet account no longer exists, so nobody can sign in to it. Deleting it stops a future account with the same email from being linked to it.')
                     ->visible(fn (array $record): bool => !$record['owns'])
-                    ->action(fn (array $record) => $this->deleteAccount((int) $record['id'])),
+                    ->action(fn (array $record) => $this->deleteAccounts([(int) $record['id']])),
             ])
             ->paginated(false)
             ->emptyStateHeading($this->problem ? 'Could not check Authentik' : 'No accounts to clean up')
@@ -155,40 +191,143 @@ class OrphanedAccounts extends Page implements HasTable
             });
         } catch (Throwable $exception) {
             $this->problem = $exception->getMessage();
+            Cache::put(self::COUNT_KEY, -1, 300);
             Log::warning('LiveNet Auth orphan check stopped: ' . $exception->getMessage());
 
             return [];
         }
 
+        // Keep the menu badge in step with what this page just showed.
+        Cache::put(self::COUNT_KEY, count($found), 600);
+
         return $found;
     }
 
-    private function deleteAccount(int $id): void
+    /**
+     * Deletes the given accounts, but only the ones that Authentik still says are orphaned and that own no
+     * servers: it checks again right now and never acts on an old answer.
+     *
+     * @param  int[]  $ids
+     */
+    private function deleteAccounts(array $ids): void
     {
-        // Check again with Authentik right now: never delete on an old answer.
-        Cache::forget(self::CACHE_KEY);
+        $this->forgetChecks();
 
         try {
-            $match = collect(Orphans::scan())->first(fn (array $row): bool => $row['user']->id === $id);
-
-            if (!$match || $match['owns']) {
-                Notification::make()->title('That account can\'t be deleted')->body('It is no longer orphaned, or it owns servers.')->warning()->send();
-
-                return;
-            }
-
-            /** @var User $user */
-            $user = $match['user'];
-            $label = "{$user->username} <{$user->email}>";
-            $user->delete();
-
-            Log::warning("LiveNet Auth deleted orphaned panel account {$label} from the admin page.");
-            Notification::make()->title('Account deleted')->body($label)->success()->send();
+            $current = collect(Orphans::scan())->keyBy(fn (array $row): int => (int) $row['user']->id);
         } catch (Throwable $exception) {
-            Notification::make()->title('Could not delete the account')->body($exception->getMessage())->danger()->send();
+            Notification::make()->title('Could not check Authentik, so nothing was deleted')->body($exception->getMessage())->danger()->send();
+
+            return;
         }
 
-        Cache::forget(self::CACHE_KEY);
+        $deleted = [];
+        $skipped = 0;
+
+        foreach ($ids as $id) {
+            $match = $current->get($id);
+
+            if (!$match || $match['owns']) {
+                $skipped++;
+
+                continue;
+            }
+
+            $user = $match['user'];
+            $label = "{$user->username} <{$user->email}>";
+
+            try {
+                $user->delete();
+                $deleted[] = $label;
+                Log::warning("LiveNet Auth deleted orphaned panel account {$label} from the admin page.");
+            } catch (Throwable $exception) {
+                $skipped++;
+                Log::warning("LiveNet Auth could not delete orphaned panel account {$label}: " . $exception->getMessage());
+            }
+        }
+
+        if ($deleted) {
+            Notification::make()
+                ->title(count($deleted) === 1 ? 'Account deleted' : count($deleted) . ' accounts deleted')
+                ->body(implode("\n", $deleted))
+                ->success()
+                ->send();
+        }
+
+        if ($skipped) {
+            Notification::make()
+                ->title($skipped === 1 ? '1 account was not deleted' : "{$skipped} accounts were not deleted")
+                ->body('It is no longer orphaned, owns servers, or could not be removed.')
+                ->warning()
+                ->send();
+        }
+
+        $this->forgetChecks();
         $this->resetTable();
+    }
+
+    private function forgetChecks(): void
+    {
+        Cache::forget(self::CACHE_KEY);
+        Cache::forget(self::COUNT_KEY);
+    }
+
+    /** The user's page in the admin panel. */
+    private function userUrl(int $id): string
+    {
+        foreach (self::resources() as $resource) {
+            if (!str_ends_with($resource, 'UserResource')) {
+                continue;
+            }
+
+            try {
+                return $resource::getUrl('edit', ['record' => $id]);
+            } catch (Throwable) {
+                // fall through to the plain address
+            }
+        }
+
+        return url("/admin/users/{$id}/edit");
+    }
+
+    /**
+     * Pelican's own Users and Roles pages, when they can be found.
+     *
+     * @return array<int, class-string>
+     */
+    private static function resources(): array
+    {
+        $found = [];
+
+        foreach ([
+            'App\\Filament\\Admin\\Resources\\Users\\UserResource',
+            'App\\Filament\\Admin\\Resources\\UserResource',
+            'App\\Filament\\Admin\\Resources\\Roles\\RoleResource',
+            'App\\Filament\\Admin\\Resources\\RoleResource',
+        ] as $class) {
+            if (class_exists($class)) {
+                $found[] = $class;
+            }
+        }
+
+        return $found;
+    }
+
+    /** The first usable answer from Pelican's own pages for a navigation setting. */
+    private static function fromResources(string $method, callable $usable): mixed
+    {
+        foreach (self::resources() as $resource) {
+            try {
+                $value = $resource::$method();
+            } catch (Throwable) {
+                continue;
+            }
+
+            if ($usable($value)) {
+                return $value;
+            }
+        }
+
+        return null;
     }
 }
