@@ -121,10 +121,7 @@ class OrphanedAccounts extends Page implements HasTable
         return $table
             ->records(fn (): array => $this->rows())
             ->columns([
-                TextColumn::make('username')
-                    ->label('Username')
-                    ->color('primary')
-                    ->url(fn (array $record): string => $this->userUrl((int) $record['id'])),
+                TextColumn::make('username')->label('Username'),
                 TextColumn::make('email')->label('Email'),
                 TextColumn::make('status')
                     ->label('Status')
@@ -153,7 +150,9 @@ class OrphanedAccounts extends Page implements HasTable
                     ->deselectRecordsAfterCompletion()
                     ->action(fn (Collection $records) => $this->deleteAccounts($records->pluck('id')->map(fn ($id): int => (int) $id)->all())),
             ])
-            ->checkIfRecordIsSelectableUsing(fn (array $record): bool => !$record['owns'])
+            // The whole row (except the tick box and the Delete button) opens the user's page.
+            ->recordUrl(fn ($record): string => $this->userUrl((int) $record['id']))
+            ->checkIfRecordIsSelectableUsing(fn ($record): bool => !($record['owns'] ?? false))
             ->recordActions([
                 Action::make('delete')
                     ->label('Delete')
@@ -161,8 +160,10 @@ class OrphanedAccounts extends Page implements HasTable
                     ->requiresConfirmation()
                     ->modalHeading('Delete this panel account?')
                     ->modalDescription('Its LiveNet account no longer exists, so nobody can sign in to it. Deleting it stops a future account with the same email from being linked to it.')
-                    ->visible(fn (array $record): bool => !$record['owns'])
-                    ->action(fn (array $record) => $this->deleteAccounts([(int) $record['id']])),
+                    // Always drawn. For an account that owns servers it is greyed out and says why.
+                    ->disabled(fn ($record): bool => (bool) ($record['owns'] ?? false))
+                    ->tooltip(fn ($record): ?string => ($record['owns'] ?? false) ? 'Owns servers: move or delete its servers first.' : null)
+                    ->action(fn ($record) => $this->deleteAccounts([(int) $record['id']])),
             ])
             ->paginated(false)
             ->emptyStateHeading($this->problem ? 'Could not check Authentik' : 'No accounts to clean up')
