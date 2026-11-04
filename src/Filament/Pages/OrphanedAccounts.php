@@ -143,6 +143,7 @@ class OrphanedAccounts extends Page implements HasTable
             ->toolbarActions([
                 BulkAction::make('delete_selected')
                     ->label('Delete selected')
+                    ->icon('tabler-trash')
                     ->color('danger')
                     ->requiresConfirmation()
                     ->modalHeading('Delete the selected accounts?')
@@ -154,15 +155,19 @@ class OrphanedAccounts extends Page implements HasTable
             ->recordUrl(fn ($record): string => $this->userUrl((int) $record['id']))
             ->checkIfRecordIsSelectableUsing(fn ($record): bool => !($record['owns'] ?? false))
             ->recordActions([
+                // A trash-can icon button like the Users page has. (The panel draws row actions as icon buttons,
+                // so an action without an icon is invisible.)
                 Action::make('delete')
                     ->label('Delete')
+                    ->icon('tabler-trash')
+                    ->iconButton()
                     ->color('danger')
                     ->requiresConfirmation()
                     ->modalHeading('Delete this panel account?')
                     ->modalDescription('Its LiveNet account no longer exists, so nobody can sign in to it. Deleting it stops a future account with the same email from being linked to it.')
                     // Always drawn. For an account that owns servers it is greyed out and says why.
                     ->disabled(fn ($record): bool => (bool) ($record['owns'] ?? false))
-                    ->tooltip(fn ($record): ?string => ($record['owns'] ?? false) ? 'Owns servers: move or delete its servers first.' : null)
+                    ->tooltip(fn ($record): string => ($record['owns'] ?? false) ? 'Owns servers: move or delete its servers first.' : 'Delete')
                     ->action(fn ($record) => $this->deleteAccounts([(int) $record['id']])),
             ])
             ->paginated(false)
