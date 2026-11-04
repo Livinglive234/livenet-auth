@@ -65,6 +65,10 @@ It was written without PHP available, so run the lint step below before enabling
 
 It matches by email or username, and does nothing if Authentik doesn't answer clearly.
 
+### The "Orphaned accounts" page
+
+Once the token is set (the daily check does not need to be on), **Admin → Orphaned accounts** (root admins only) lists every panel account whose LiveNet account no longer exists, with a **Delete** button on each. It checks Authentik when the page opens, or when you press **Check Authentik now**, and checks again before deleting. Accounts that own servers are listed as "Owns servers" and have no Delete button: move or delete their servers first.
+
 ## Settings page
 
 Admin → Plugins → LiveNet Auth → Settings has a toggle or field for everything below, and for Pelican's own related settings (password login, the two email notifications). Saving writes to the panel's `.env` and clears the config cache, so changes apply straight away. You can still edit `.env` by hand if you prefer.

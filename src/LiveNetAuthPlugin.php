@@ -10,6 +10,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Panel;
 use Filament\Schemas\Components\Section;
+use LiveNet\LiveNetAuth\Filament\Pages\OrphanedAccounts;
 use LiveNet\LiveNetAuth\Http\Middleware\EndRevokedSessions;
 
 /**
@@ -79,6 +80,15 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         if (config('livenet-auth.enabled', true) && config('livenet-auth.backchannel_logout', true)) {
             try {
                 $panel->authMiddleware([EndRevokedSessions::class], isPersistent: true);
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        }
+
+        // The "Orphaned accounts" admin page. Only the admin panel gets it.
+        if ($panel->getId() === 'admin' && config('livenet-auth.enabled', true)) {
+            try {
+                $panel->pages([OrphanedAccounts::class]);
             } catch (\Throwable $exception) {
                 report($exception);
             }
