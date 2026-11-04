@@ -604,9 +604,10 @@ class LiveNetAuthServiceProvider extends ServiceProvider
             // (before timezone), and keeps it there when Livewire redraws the form.
             $script = '<script>(function(){'
                 . 'var t;function place(){var box=document.getElementById("ln-account-link");if(!box)return;'
-                . 'var i=document.querySelector("input[type=email],input[id$=\\.email],input[wire\\:model*=email]");'
-                . 'var f=i&&i.closest(".fi-fo-field,.fi-fo-field-wrp");'
-                . 'if(f&&f.nextElementSibling!==box){f.insertAdjacentElement("afterend",box);box.style.margin="0.75rem 0";}}'
+                . 'var i=document.querySelector("input[type=email]");if(!i)return;'
+                . 'var q="input,select,textarea",f=i;'
+                . 'while(f.parentElement&&f.parentElement.querySelectorAll(q).length===f.querySelectorAll(q).length)f=f.parentElement;'
+                . 'if(f!==box&&f.nextElementSibling!==box){f.insertAdjacentElement("afterend",box);box.style.margin="0.75rem 0";box.style.gridColumn="1 / -1";}}'
                 . 'new MutationObserver(function(){cancelAnimationFrame(t);t=requestAnimationFrame(place);})'
                 . '.observe(document.documentElement,{childList:true,subtree:true});'
                 . 'document.addEventListener("DOMContentLoaded",place);place();'
