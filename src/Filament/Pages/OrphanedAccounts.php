@@ -46,6 +46,45 @@ class OrphanedAccounts extends Page implements HasTable
         return 'Orphaned accounts';
     }
 
+    /** Sits in the same menu group as Pelican's own Users page, right after it. */
+    public static function getNavigationGroup(): ?string
+    {
+        $users = self::usersResource();
+
+        try {
+            $group = $users ? $users::getNavigationGroup() : null;
+        } catch (Throwable) {
+            $group = null;
+        }
+
+        return is_string($group) && $group !== '' ? $group : 'User';
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        $users = self::usersResource();
+
+        try {
+            $sort = $users ? $users::getNavigationSort() : null;
+        } catch (Throwable) {
+            $sort = null;
+        }
+
+        return is_int($sort) ? $sort + 1 : null;
+    }
+
+    /** @return class-string|null */
+    private static function usersResource(): ?string
+    {
+        foreach (['App\\Filament\\Admin\\Resources\\Users\\UserResource', 'App\\Filament\\Admin\\Resources\\UserResource'] as $class) {
+            if (class_exists($class)) {
+                return $class;
+            }
+        }
+
+        return null;
+    }
+
     public static function getNavigationIcon(): ?string
     {
         return 'tabler-user-x';
