@@ -47,6 +47,8 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         'logout_to_authentik' => ['LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', 'livenet-auth.logout_to_authentik', 'bool'],
         'backchannel_logout' => ['LIVENET_AUTH_BACKCHANNEL_LOGOUT', 'livenet-auth.backchannel_logout', 'bool'],
         'sftp_password' => ['LIVENET_AUTH_SFTP_PASSWORD', 'livenet-auth.sftp_password', 'bool'],
+        'account_notice' => ['LIVENET_AUTH_ACCOUNT_NOTICE', 'livenet-auth.account_notice', 'bool'],
+        'account_page_url' => ['LIVENET_AUTH_ACCOUNT_PAGE_URL', 'livenet-auth.account_page_url', 'string'],
         'back_to_site' => ['LIVENET_AUTH_BACK_TO_SITE', 'livenet-auth.back_to_site', 'bool'],
         'back_to_site_url' => ['LIVENET_AUTH_BACK_TO_SITE_URL', 'livenet-auth.back_to_site_url', 'string'],
         'logout_url' => ['LIVENET_AUTH_LOGOUT_URL', 'livenet-auth.logout_url', 'string'],
@@ -150,6 +152,19 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
                     Toggle::make('disable_panel_2fa')
                         ->label('Remove the 2FA tab entirely')
                         ->helperText('Off by default: the tab stays and its click goes to the LiveNet account\'s 2FA page. Turn this on to remove the tab (and the panel\'s own 2FA options), and show a plain button instead. Takes effect after the page reloads.'),
+                ]),
+
+            Section::make('Profile page')
+                ->description('The panel locks usernames, emails and passwords for LiveNet accounts.')
+                ->schema([
+                    Toggle::make('account_notice')
+                        ->label('Show a link to the LiveNet account page')
+                        ->helperText('Adds a notice at the top of the profile page with a button to the page below.'),
+                    TextInput::make('account_page_url')
+                        ->label('LiveNet account page')
+                        ->url()
+                        ->required()
+                        ->maxLength(255),
                 ]),
 
             Section::make('Two-factor authentication')

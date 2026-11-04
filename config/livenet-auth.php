@@ -101,6 +101,11 @@ return [
     'sftp_password' => (bool) env('LIVENET_AUTH_SFTP_PASSWORD', true),
     'sftp_password_min_length' => (int) env('LIVENET_AUTH_SFTP_PASSWORD_MIN', 12),
 
+    // A notice at the top of the panel's profile page pointing to the LiveNet account page, where
+    // the username, email and password are changed (they are locked in the panel).
+    'account_notice' => (bool) env('LIVENET_AUTH_ACCOUNT_NOTICE', true),
+    'account_page_url' => env('LIVENET_AUTH_ACCOUNT_PAGE_URL', 'https://livenet.host/account'),
+
     // A "Back to livenet.host" button under the panel's login form.
     'back_to_site' => (bool) env('LIVENET_AUTH_BACK_TO_SITE', true),
     'back_to_site_url' => env('LIVENET_AUTH_BACK_TO_SITE_URL', 'https://livenet.host/'),

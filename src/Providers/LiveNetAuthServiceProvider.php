@@ -100,6 +100,10 @@ class LiveNetAuthServiceProvider extends ServiceProvider
             config(['panel.auth.2fa_required' => 0]);
         }
 
+        if (config('livenet-auth.account_notice')) {
+            $this->showAccountNotice();
+        }
+
         if (config('livenet-auth.show_mfa_notice')) {
             $this->showTwoFactorNotice();
         }
@@ -577,6 +581,26 @@ class LiveNetAuthServiceProvider extends ServiceProvider
                 . '})();</script>'
             ),
         );
+    }
+
+    /** A notice on the profile page pointing to the LiveNet account page. */
+    private function showAccountNotice(): void
+    {
+        FilamentView::registerRenderHook(PanelsRenderHook::PAGE_START, function (): HtmlString {
+            if (!Str::is('filament.*.auth.profile', (string) (request()->route()?->getName() ?? ''))) {
+                return new HtmlString('');
+            }
+
+            $url = e((string) config('livenet-auth.account_page_url'));
+            $button = 'display:inline-block;padding:0.4rem 0.9rem;border-radius:0.5rem;'
+                . 'border:1px solid currentColor;text-decoration:none;font-weight:600;white-space:nowrap;';
+
+            return new HtmlString(
+                '<div style="margin:0 0 1rem;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;justify-content:space-between">'
+                . '<span>Your username, email and password are managed on your LiveNet account.</span>'
+                . '<a href="' . $url . '" style="' . $button . '">Edit on livenet.host</a></div>'
+            );
+        });
     }
 
     /**
