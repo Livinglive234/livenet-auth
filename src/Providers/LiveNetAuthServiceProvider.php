@@ -193,12 +193,15 @@ class LiveNetAuthServiceProvider extends ServiceProvider
                     }
                 })
                 ->extraModalFooterActions(fn (): array => SftpPassword::isSet(user()) ? [
+                    // button() so they show their labels, whatever the panel's default action style is.
                     Action::make('livenet_connect_sftp')
+                        ->button()
                         ->label('Connect to SFTP')
                         ->icon(TablerIcon::Plug)
                         ->color('success')
                         ->url($url),
                     Action::make('livenet_change_sftp_password')
+                        ->button()
                         ->label('Change SFTP password')
                         ->color('gray')
                         ->modalHeading('Change SFTP password')
