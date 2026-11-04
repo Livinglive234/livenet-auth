@@ -107,6 +107,17 @@ class OrphanedAccounts extends Page implements HasTable
                     ->badge()
                     ->color(fn (string $state): string => $state === 'Owns servers' ? 'warning' : 'danger'),
             ])
+            // In the table's toolbar (top right, where a search box would be), like a refresh button should be.
+            ->headerActions([
+                Action::make('refresh')
+                    ->label('Refresh')
+                    ->icon('tabler-refresh')
+                    ->color('gray')
+                    ->action(function (): void {
+                        Cache::forget(self::CACHE_KEY);
+                        $this->resetTable();
+                    }),
+            ])
             ->recordActions([
                 Action::make('delete')
                     ->label('Delete')
@@ -120,19 +131,6 @@ class OrphanedAccounts extends Page implements HasTable
             ->paginated(false)
             ->emptyStateHeading($this->problem ? 'Could not check Authentik' : 'No accounts to clean up')
             ->emptyStateDescription($this->problem ?? 'Every LiveNet-linked panel account still exists in Authentik.');
-    }
-
-    /** @return array<int, Action> */
-    protected function getHeaderActions(): array
-    {
-        return [
-            Action::make('refresh')
-                ->label('Check Authentik now')
-                ->action(function (): void {
-                    Cache::forget(self::CACHE_KEY);
-                    $this->resetTable();
-                }),
-        ];
     }
 
     /** @return array<int|string, array<string, mixed>> */
