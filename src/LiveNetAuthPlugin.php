@@ -47,6 +47,8 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         'logout_to_authentik' => ['LIVENET_AUTH_LOGOUT_TO_AUTHENTIK', 'livenet-auth.logout_to_authentik', 'bool'],
         'backchannel_logout' => ['LIVENET_AUTH_BACKCHANNEL_LOGOUT', 'livenet-auth.backchannel_logout', 'bool'],
         'sftp_password' => ['LIVENET_AUTH_SFTP_PASSWORD', 'livenet-auth.sftp_password', 'bool'],
+        'show_oauth_notice' => ['LIVENET_AUTH_SHOW_OAUTH_NOTICE', 'livenet-auth.show_oauth_notice', 'bool'],
+        'oauth_page_url' => ['LIVENET_AUTH_OAUTH_PAGE_URL', 'livenet-auth.oauth_page_url', 'string'],
         'account_notice' => ['LIVENET_AUTH_ACCOUNT_NOTICE', 'livenet-auth.account_notice', 'bool'],
         'account_page_url' => ['LIVENET_AUTH_ACCOUNT_PAGE_URL', 'livenet-auth.account_page_url', 'string'],
         'back_to_site' => ['LIVENET_AUTH_BACK_TO_SITE', 'livenet-auth.back_to_site', 'bool'],
@@ -162,6 +164,14 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
                         ->helperText('Adds a notice at the top of the profile page with a button to the page below.'),
                     TextInput::make('account_page_url')
                         ->label('LiveNet account page')
+                        ->url()
+                        ->required()
+                        ->maxLength(255),
+                    Toggle::make('show_oauth_notice')
+                        ->label('Send the OAuth tab to the LiveNet account')
+                        ->helperText('Clicking the profile page\'s OAuth tab, or opening its old address, goes to the page below, where linked sign-ins are managed.'),
+                    TextInput::make('oauth_page_url')
+                        ->label('LiveNet linked accounts page')
                         ->url()
                         ->required()
                         ->maxLength(255),

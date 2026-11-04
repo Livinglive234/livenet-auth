@@ -105,6 +105,10 @@ class LiveNetAuthServiceProvider extends ServiceProvider
             $this->showAccountNotice();
         }
 
+        if (config('livenet-auth.show_oauth_notice')) {
+            $this->showOAuthTabRedirect();
+        }
+
         if (config('livenet-auth.show_mfa_notice')) {
             $this->showTwoFactorNotice();
         }
@@ -582,6 +586,34 @@ class LiveNetAuthServiceProvider extends ServiceProvider
                 . '})();</script>'
             ),
         );
+    }
+
+    /**
+     * Send the profile page's OAuth tab to the LiveNet account's linked accounts page.
+     * The tab stays as Pelican draws it and a click on it is taken over. The tab is found by its
+     * click handler or, failing that, by its label. The old address (?tab=oauth) is redirected too.
+     */
+    private function showOAuthTabRedirect(): void
+    {
+        FilamentView::registerRenderHook(PanelsRenderHook::PAGE_START, function (): HtmlString {
+            if (!Str::is('filament.*.auth.profile', (string) (request()->route()?->getName() ?? ''))) {
+                return new HtmlString('');
+            }
+
+            $target = json_encode((string) config('livenet-auth.oauth_page_url'), JSON_UNESCAPED_SLASHES);
+
+            return new HtmlString(
+                '<script>if(/[?&]tab=oauth/i.test(location.search))location.replace(' . $target . ');</script>'
+                . '<script>(function(u){'
+                . 'if(window.__lnTabOauth)return;window.__lnTabOauth=true;'
+                . 'function find(el){var t=el.closest&&el.closest("[role=tab],button");if(!t)return null;'
+                . 'if(/oauth::data::tab/i.test(t.getAttribute("x-on:click")||""))return t;'
+                . 'if(t.getAttribute("role")==="tab"&&/^\\s*o-?auth/i.test(t.textContent||""))return t;return null;}'
+                . 'document.addEventListener("click",function(e){if(!find(e.target))return;'
+                . 'e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();location.href=u;},true);'
+                . '})(' . $target . ');</script>'
+            );
+        });
     }
 
     /** A notice on the profile page pointing to the LiveNet account page. */

@@ -101,6 +101,11 @@ return [
     'sftp_password' => (bool) env('LIVENET_AUTH_SFTP_PASSWORD', true),
     'sftp_password_min_length' => (int) env('LIVENET_AUTH_SFTP_PASSWORD_MIN', 12),
 
+    // Send the profile page's OAuth tab (and its old address, ?tab=oauth) to the LiveNet account's
+    // linked accounts page, since sign-in options are managed there.
+    'show_oauth_notice' => (bool) env('LIVENET_AUTH_SHOW_OAUTH_NOTICE', true),
+    'oauth_page_url' => env('LIVENET_AUTH_OAUTH_PAGE_URL', 'https://livenet.host/account/connections'),
+
     // A notice at the top of the panel's profile page pointing to the LiveNet account page, where
     // the username, email and password are changed (they are locked in the panel).
     'account_notice' => (bool) env('LIVENET_AUTH_ACCOUNT_NOTICE', true),
