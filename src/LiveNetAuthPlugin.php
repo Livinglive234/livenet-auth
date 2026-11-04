@@ -8,6 +8,7 @@ use Filament\Contracts\Plugin;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Artisan;
 use Filament\Panel;
 use Filament\Schemas\Components\Section;
 use LiveNet\LiveNetAuth\Filament\Pages\OrphanedAccounts;
@@ -330,6 +331,14 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         }
 
         $this->writeToEnvironment($values);
+
+        // The queue worker (which sends the emails) keeps the settings it started with, so ask it to restart
+        // and pick up the new ones. Harmless if no worker is running.
+        try {
+            Artisan::call('queue:restart');
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
 
         Notification::make()
             ->title('LiveNet Auth settings saved')
