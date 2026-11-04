@@ -5,6 +5,7 @@ namespace LiveNet\LiveNetAuth\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use LiveNet\LiveNetAuth\Http\Middleware\EndRevokedSessions;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,6 +29,8 @@ class BackchannelLogout
         try {
             $claims = $this->verify((string) $request->input('logout_token'));
         } catch (Throwable $exception) {
+            Log::warning('livenet-auth: back-channel logout rejected: ' . $exception->getMessage());
+
             return response()->json(['error' => 'invalid_request', 'error_description' => $exception->getMessage()], 400);
         }
 
@@ -37,6 +40,8 @@ class BackchannelLogout
         if ((int) $claims['iat'] > (int) Cache::get($key, 0)) {
             Cache::put($key, (int) $claims['iat'], now()->addDays(2));
         }
+
+        Log::info('livenet-auth: back-channel logout accepted for ' . substr(hash('sha256', $claims['sub']), 0, 10));
 
         return response('', 200);
     }
