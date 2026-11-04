@@ -7,6 +7,7 @@ use App\Traits\EnvironmentWriterTrait;
 use Filament\Contracts\Plugin;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Artisan;
 use Filament\Panel;
@@ -53,6 +54,8 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         'oauth_page_url' => ['LIVENET_AUTH_OAUTH_PAGE_URL', 'livenet-auth.oauth_page_url', 'string'],
         'account_notice' => ['LIVENET_AUTH_ACCOUNT_NOTICE', 'livenet-auth.account_notice', 'bool'],
         'account_page_url' => ['LIVENET_AUTH_ACCOUNT_PAGE_URL', 'livenet-auth.account_page_url', 'string'],
+        'user_menu_link' => ['LIVENET_AUTH_USER_MENU_LINK', 'livenet-auth.user_menu_link', 'bool'],
+        'user_menu_label' => ['LIVENET_AUTH_USER_MENU_LABEL', 'livenet-auth.user_menu_label', 'string'],
         'back_to_site' => ['LIVENET_AUTH_BACK_TO_SITE', 'livenet-auth.back_to_site', 'bool'],
         'back_to_site_url' => ['LIVENET_AUTH_BACK_TO_SITE_URL', 'livenet-auth.back_to_site_url', 'string'],
         'logout_url' => ['LIVENET_AUTH_LOGOUT_URL', 'livenet-auth.logout_url', 'string'],
@@ -81,6 +84,24 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
         if (config('livenet-auth.enabled', true) && config('livenet-auth.backchannel_logout', true)) {
             try {
                 $panel->authMiddleware([EndRevokedSessions::class], isPersistent: true);
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        }
+
+        // A "Return to LiveNet" link in the menu that opens from the profile picture, on every panel.
+        if (config('livenet-auth.enabled', true) && config('livenet-auth.user_menu_link', true)) {
+            try {
+                $url = (string) config('livenet-auth.back_to_site_url');
+
+                if (preg_match('#^https?://#i', $url)) {
+                    $panel->userMenuItems([
+                        'livenet-return' => Action::make('livenet-return')
+                            ->label((string) config('livenet-auth.user_menu_label', 'Return to LiveNet'))
+                            ->icon('tabler-arrow-back-up')
+                            ->url($url),
+                    ]);
+                }
             } catch (\Throwable $exception) {
                 report($exception);
             }
@@ -277,6 +298,12 @@ class LiveNetAuthPlugin implements HasPluginSettings, Plugin
                         ->label('Where that button goes')
                         ->url()
                         ->maxLength(255),
+                    Toggle::make('user_menu_link')
+                        ->label('Add a "Return to LiveNet" link to the profile picture menu')
+                        ->helperText('Appears in the menu that opens when you click your profile picture, and goes to the same address as the button above.'),
+                    TextInput::make('user_menu_label')
+                        ->label('Text of that link')
+                        ->maxLength(60),
                     Toggle::make('backchannel_logout')
                         ->label('Sign out here when the Authentik login ends elsewhere')
                         ->helperText('Authentik tells the panel (back-channel logout). Needs the panel provider\'s Logout URI set to https://panel.livenet.host/livenet-auth/backchannel-logout with the Back-channel method. Takes effect for sessions started after this is on.'),

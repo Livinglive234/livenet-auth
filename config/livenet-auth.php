@@ -114,6 +114,10 @@ return [
     // A "Back to livenet.host" button under the panel's login form.
     'back_to_site' => (bool) env('LIVENET_AUTH_BACK_TO_SITE', true),
     'back_to_site_url' => env('LIVENET_AUTH_BACK_TO_SITE_URL', 'https://livenet.host/'),
+    // A "Return to LiveNet" entry in the menu that opens when you click your profile picture. It goes to the
+    // same address as the login page's button above.
+    'user_menu_link' => (bool) env('LIVENET_AUTH_USER_MENU_LINK', true),
+    'user_menu_label' => env('LIVENET_AUTH_USER_MENU_LABEL', 'Return to LiveNet'),
     'back_to_site_label' => env('LIVENET_AUTH_BACK_TO_SITE_LABEL', 'Back to livenet.host'),
 
     // Daily check that removes panel accounts whose Authentik account was deleted. Needs a
