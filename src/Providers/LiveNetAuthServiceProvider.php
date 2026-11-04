@@ -16,6 +16,7 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Notifications\Events\NotificationSending;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\HtmlString;
@@ -591,14 +592,17 @@ class LiveNetAuthServiceProvider extends ServiceProvider
                 return new HtmlString('');
             }
 
-            $url = e((string) config('livenet-auth.account_page_url'));
-            $button = 'display:inline-block;padding:0.4rem 0.9rem;border-radius:0.5rem;'
-                . 'border:1px solid currentColor;text-decoration:none;font-weight:600;white-space:nowrap;';
+            $url = (string) config('livenet-auth.account_page_url');
+
+            // Filament's own button, so it matches the panel's theme (colours, size, dark mode).
+            $button = Blade::render(
+                '<x-filament::button tag="a" :href="$url">Edit on livenet.host</x-filament::button>',
+                ['url' => $url],
+            );
 
             return new HtmlString(
                 '<div style="margin:0 0 1rem;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;justify-content:space-between">'
-                . '<span>Your username, email and password are managed on your LiveNet account.</span>'
-                . '<a href="' . $url . '" style="' . $button . '">Edit on livenet.host</a></div>'
+                . '<span>Your username, email and password are managed on your LiveNet account.</span>' . $button . '</div>'
             );
         });
     }
