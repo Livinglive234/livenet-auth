@@ -130,6 +130,31 @@ class OrphanedAccounts extends Page implements HasTable
             ])
             // In the table's toolbar (top right, where a search box would be).
             ->headerActions([
+                // Always there, greyed out until something is ticked. (The browser works out the greying from
+                // the ticked rows; the server also refuses to do anything when nothing is selected.)
+                Action::make('delete_selected_now')
+                    ->label('Delete selected')
+                    ->icon('tabler-trash')
+                    ->color('danger')
+                    ->extraAttributes([
+                        'x-bind:disabled' => 'selectedRecords.length === 0',
+                        'x-bind:class' => "{ 'opacity-50 pointer-events-none': selectedRecords.length === 0 }",
+                    ])
+                    ->requiresConfirmation()
+                    ->modalHeading('Delete the selected accounts?')
+                    ->modalDescription('Their LiveNet accounts no longer exist, so nobody can sign in to them. Each one is checked with Authentik again before it is deleted.')
+                    ->action(function (): void {
+                        $ids = array_map('intval', array_values((array) $this->selectedTableRecords));
+
+                        if (!$ids) {
+                            Notification::make()->title('Tick the accounts to delete first')->warning()->send();
+
+                            return;
+                        }
+
+                        $this->deleteAccounts($ids);
+                        $this->deselectAllTableRecords();
+                    }),
                 Action::make('refresh')
                     ->label('Refresh')
                     ->icon('tabler-refresh')
