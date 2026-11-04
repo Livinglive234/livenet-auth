@@ -600,9 +600,21 @@ class LiveNetAuthServiceProvider extends ServiceProvider
                 ['url' => $url],
             );
 
+            // Shown at the top by default. A script then moves it to sit right after the email field
+            // (before timezone), and keeps it there when Livewire redraws the form.
+            $script = '<script>(function(){'
+                . 'var t;function place(){var box=document.getElementById("ln-account-link");if(!box)return;'
+                . 'var i=document.querySelector("input[type=email],input[id$=\\.email],input[wire\\:model*=email]");'
+                . 'var f=i&&i.closest(".fi-fo-field,.fi-fo-field-wrp");'
+                . 'if(f&&f.nextElementSibling!==box){f.insertAdjacentElement("afterend",box);box.style.margin="0.75rem 0";}}'
+                . 'new MutationObserver(function(){cancelAnimationFrame(t);t=requestAnimationFrame(place);})'
+                . '.observe(document.documentElement,{childList:true,subtree:true});'
+                . 'document.addEventListener("DOMContentLoaded",place);place();'
+                . '})();</script>';
+
             return new HtmlString(
-                '<div style="margin:0 0 1rem;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;justify-content:space-between">'
-                . '<span>Your username, email and password are managed on your LiveNet account.</span>' . $button . '</div>'
+                '<div id="ln-account-link" style="margin:0 0 1rem;display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center">'
+                . $button . '<span>Your username, email and password are managed on your LiveNet account.</span></div>' . $script
             );
         });
     }
