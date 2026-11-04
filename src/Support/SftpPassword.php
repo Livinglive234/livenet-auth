@@ -3,6 +3,8 @@
 namespace LiveNet\LiveNetAuth\Support;
 
 use App\Models\User;
+use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -40,5 +42,18 @@ class SftpPassword
 
             DB::table(self::TABLE)->updateOrInsert(['user_id' => $user->id], ['set_at' => now()]);
         });
+
+        // The session remembers a copy of the password hash and signs the person out when it changes. Forget
+        // the old copy for their own session, so the next request stores the new one and keeps them signed in.
+        try {
+            if (Auth::check() && (int) Auth::id() === (int) $user->id && session()->isStarted()) {
+                session()->forget(array_unique([
+                    'password_hash_' . Filament::getAuthGuard(),
+                    'password_hash_' . Auth::getDefaultDriver(),
+                ]));
+            }
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 }
